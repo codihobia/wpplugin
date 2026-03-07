@@ -1,0 +1,39 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "dsg/generator",
+    "version": "1.0.0",
+    "title": "DeepSeek AI Generator",
+    "category": "widgets",
+    "icon": "format-chat",
+    "description": "插入 DeepSeek AI 文本生成界面，可选择提示词模板。",
+    "textdomain": "deepseek-generator",
+    "attributes": {
+        "templateId": {
+            "type": "number",
+            "default": 0
+        },
+        "placeholder": {
+            "type": "string",
+            "default": "请输入你的内容..."
+        },
+        "buttonText": {
+            "type": "string",
+            "default": "生成"
+        },
+        "showExample": {
+            "type": "boolean",
+            "default": true
+        },
+        "theme": {
+            "type": "string",
+            "default": "light",
+            "enum": ["light", "dark"]
+        }
+    },
+    "supports": {
+        "html": false,
+        "align": ["wide", "full"]
+    },
+    "editorScript": "file:../../assets/js/block-editor.js"
+}

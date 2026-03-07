@@ -1,0 +1,16 @@
+/* ── DeepSeek Generator Admin ── */
+
+.dsg-meta-table textarea {
+    font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100px;
+}
+
+.dsg-shortcode-hint code {
+    background: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    user-select: all;
+}

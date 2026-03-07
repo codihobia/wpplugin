@@ -1,0 +1,312 @@
+/* ── DeepSeek Generator Frontend ── */
+
+.dsg-generator {
+    --dsg-primary: #4f46e5;
+    --dsg-primary-hover: #4338ca;
+    --dsg-bg: #ffffff;
+    --dsg-surface: #f8fafc;
+    --dsg-border: #e2e8f0;
+    --dsg-text: #1e293b;
+    --dsg-text-muted: #64748b;
+    --dsg-radius: 10px;
+    --dsg-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --dsg-error: #dc2626;
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    max-width: 720px;
+    margin: 24px auto;
+    padding: 24px;
+    background: var(--dsg-bg);
+    border: 1px solid var(--dsg-border);
+    border-radius: var(--dsg-radius);
+    box-shadow: var(--dsg-shadow);
+    color: var(--dsg-text);
+    line-height: 1.6;
+}
+
+/* Dark theme */
+.dsg-theme-dark {
+    --dsg-primary: #818cf8;
+    --dsg-primary-hover: #a5b4fc;
+    --dsg-bg: #1e1e2e;
+    --dsg-surface: #2a2a3c;
+    --dsg-border: #3f3f5c;
+    --dsg-text: #e2e8f0;
+    --dsg-text-muted: #94a3b8;
+    --dsg-error: #f87171;
+}
+
+/* ── Header ── */
+
+.dsg-header {
+    margin-bottom: 16px;
+}
+
+.dsg-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dsg-text);
+}
+
+/* ── Input ── */
+
+.dsg-input-area {
+    margin-bottom: 12px;
+}
+
+.dsg-input {
+    display: block;
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--dsg-text);
+    background: var(--dsg-surface);
+    border: 1px solid var(--dsg-border);
+    border-radius: 8px;
+    resize: vertical;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.dsg-input:focus {
+    outline: none;
+    border-color: var(--dsg-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.dsg-theme-dark .dsg-input:focus {
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+/* ── Buttons ── */
+
+.dsg-actions {
+    margin-bottom: 16px;
+}
+
+.dsg-btn-generate {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--dsg-primary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    font-family: inherit;
+}
+
+.dsg-btn-generate:hover:not(:disabled) {
+    background: var(--dsg-primary-hover);
+}
+
+.dsg-btn-generate:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.dsg-btn-generate:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Spinner */
+
+.dsg-spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: dsg-spin 0.6s linear infinite;
+}
+
+@keyframes dsg-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Output ── */
+
+.dsg-output-area {
+    border: 1px solid var(--dsg-border);
+    border-radius: 8px;
+    background: var(--dsg-surface);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.dsg-output-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--dsg-border);
+    background: var(--dsg-bg);
+}
+
+.dsg-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 13px;
+    color: var(--dsg-text-muted);
+    background: transparent;
+    border: 1px solid var(--dsg-border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    font-family: inherit;
+}
+
+.dsg-btn-icon:hover {
+    color: var(--dsg-primary);
+    border-color: var(--dsg-primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.dsg-btn-icon svg {
+    flex-shrink: 0;
+}
+
+.dsg-output-content {
+    padding: 16px;
+    min-height: 60px;
+    font-size: 15px;
+    line-height: 1.7;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.dsg-output-content p {
+    margin: 0 0 12px;
+}
+
+.dsg-output-content p:last-child {
+    margin-bottom: 0;
+}
+
+.dsg-output-content pre {
+    background: var(--dsg-bg);
+    border: 1px solid var(--dsg-border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 14px;
+}
+
+.dsg-output-content code {
+    font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+}
+
+.dsg-output-content :not(pre) > code {
+    background: rgba(79, 70, 229, 0.08);
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.dsg-output-content ul,
+.dsg-output-content ol {
+    padding-left: 24px;
+    margin: 0 0 12px;
+}
+
+.dsg-output-content blockquote {
+    border-left: 3px solid var(--dsg-primary);
+    margin: 0 0 12px;
+    padding: 8px 16px;
+    color: var(--dsg-text-muted);
+}
+
+.dsg-output-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 12px;
+}
+
+.dsg-output-content th,
+.dsg-output-content td {
+    border: 1px solid var(--dsg-border);
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.dsg-output-content th {
+    background: var(--dsg-bg);
+    font-weight: 600;
+}
+
+/* ── Example ── */
+
+.dsg-example {
+    border: 1px solid var(--dsg-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--dsg-surface);
+}
+
+.dsg-example-label {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dsg-text-muted);
+    background: var(--dsg-bg);
+    border-bottom: 1px solid var(--dsg-border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dsg-example-content {
+    padding: 14px;
+    font-size: 14px;
+    color: var(--dsg-text-muted);
+    line-height: 1.6;
+}
+
+/* ── Error ── */
+
+.dsg-error {
+    color: var(--dsg-error);
+    font-style: italic;
+}
+
+.dsg-error-msg {
+    color: var(--dsg-error);
+    padding: 8px 0;
+}
+
+/* ── Shake animation ── */
+
+@keyframes dsg-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+.dsg-shake {
+    animation: dsg-shake 0.4s ease-in-out;
+    border-color: var(--dsg-error) !important;
+}
+
+/* ── Responsive ── */
+
+@media ( max-width: 600px ) {
+    .dsg-generator {
+        margin: 12px;
+        padding: 16px;
+    }
+
+    .dsg-btn-generate {
+        width: 100%;
+        justify-content: center;
+    }
+}
