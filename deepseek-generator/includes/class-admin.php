@@ -50,6 +50,15 @@ class DSG_Admin {
             'dsg-settings',
             [ __CLASS__, 'render_settings_page' ]
         );
+
+        add_submenu_page(
+            'dsg-settings',
+            __( '生成记录', 'deepseek-generator' ),
+            __( '生成记录', 'deepseek-generator' ),
+            'manage_options',
+            'dsg-history',
+            [ 'DSG_History', 'render_admin_page' ]
+        );
     }
 
     public static function register_settings(): void {
@@ -216,11 +225,13 @@ class DSG_Admin {
     public static function render_prompt_meta_box( $post ): void {
         wp_nonce_field( 'dsg_save_prompt', 'dsg_prompt_nonce' );
 
-        $system_prompt = get_post_meta( $post->ID, '_ds_system_prompt', true );
-        $user_template = get_post_meta( $post->ID, '_ds_user_prompt_template', true );
+        $system_prompt  = get_post_meta( $post->ID, '_ds_system_prompt', true );
+        $user_template  = get_post_meta( $post->ID, '_ds_user_prompt_template', true );
         $output_example = get_post_meta( $post->ID, '_ds_output_example', true );
-        $temperature   = get_post_meta( $post->ID, '_ds_temperature', true );
-        $max_tokens    = get_post_meta( $post->ID, '_ds_max_tokens', true );
+        $temperature    = get_post_meta( $post->ID, '_ds_temperature', true );
+        $max_tokens     = get_post_meta( $post->ID, '_ds_max_tokens', true );
+        $allow_save     = get_post_meta( $post->ID, '_ds_allow_save', true );
+        $show_history   = get_post_meta( $post->ID, '_ds_show_history', true );
         ?>
         <table class="form-table dsg-meta-table">
             <tr>
@@ -256,6 +267,21 @@ class DSG_Admin {
                 <td>
                     <input type="number" id="ds_max_tokens" name="ds_max_tokens" value="<?php echo esc_attr( $max_tokens ); ?>" min="1" max="131072" step="1" class="small-text" />
                     <p class="description"><?php esc_html_e( '留空则使用全局默认值。', 'deepseek-generator' ); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th><?php esc_html_e( '持久化保存', 'deepseek-generator' ); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="ds_allow_save" value="1" <?php checked( $allow_save, '1' ); ?> />
+                        <?php esc_html_e( '允许用户将生成结果保存到数据库', 'deepseek-generator' ); ?>
+                    </label>
+                    <br>
+                    <label>
+                        <input type="checkbox" name="ds_show_history" value="1" <?php checked( $show_history, '1' ); ?> />
+                        <?php esc_html_e( '在前端展示已保存的历史生成记录', 'deepseek-generator' ); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e( '启用后，用户生成文本后可选择保存，其他访客也能看到已保存的内容。', 'deepseek-generator' ); ?></p>
                 </td>
             </tr>
         </table>
@@ -307,6 +333,11 @@ class DSG_Admin {
             } else {
                 update_post_meta( $post_id, $meta_key, sanitize_text_field( $val ) );
             }
+        }
+
+        $checkboxes = [ '_ds_allow_save' => 'ds_allow_save', '_ds_show_history' => 'ds_show_history' ];
+        foreach ( $checkboxes as $meta_key => $post_key ) {
+            update_post_meta( $post_id, $meta_key, empty( $_POST[ $post_key ] ) ? '' : '1' );
         }
     }
 

@@ -99,10 +99,17 @@
                         }, attrs.buttonText ),
                         attrs.showExample && exampleText ?
                             el( 'div', {
-                                style: { padding: '10px', background: '#f0f6fc', borderRadius: '6px', fontSize: '13px', color: '#555', borderLeft: '3px solid #2271b1' },
+                                style: { padding: '10px', background: '#f0f6fc', borderRadius: '6px', fontSize: '13px', color: '#555', borderLeft: '3px solid #2271b1', marginBottom: '10px' },
                             },
                                 el( 'strong', null, '输出样例: ' ),
                                 exampleText
+                            ) : null,
+                        ( selectedTemplate && ( selectedTemplate.allowSave || selectedTemplate.showHistory ) ) ?
+                            el( 'div', {
+                                style: { padding: '8px 10px', background: '#fef3c7', borderRadius: '6px', fontSize: '12px', color: '#92400e', display: 'flex', gap: '12px' },
+                            },
+                                selectedTemplate.allowSave ? el( 'span', null, '\u2705 允许保存' ) : null,
+                                selectedTemplate.showHistory ? el( 'span', null, '\ud83d\udcdc 展示历史' ) : null
                             ) : null
                     )
                 );

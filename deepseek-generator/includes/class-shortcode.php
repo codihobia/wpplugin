@@ -53,6 +53,13 @@ class DSG_Shortcode {
                 'error'       => __( '生成失败，请重试。', 'deepseek-generator' ),
                 'empty_input' => __( '请输入内容。', 'deepseek-generator' ),
                 'example'     => __( '输出样例', 'deepseek-generator' ),
+                'save'        => __( '保存', 'deepseek-generator' ),
+                'saved'       => __( '已保存', 'deepseek-generator' ),
+                'saving'      => __( '保存中...', 'deepseek-generator' ),
+                'save_fail'   => __( '保存失败。', 'deepseek-generator' ),
+                'load_more'   => __( '加载更多', 'deepseek-generator' ),
+                'no_history'  => __( '暂无记录。', 'deepseek-generator' ),
+                'history'     => __( '历史生成记录', 'deepseek-generator' ),
             ],
         ] );
     }
@@ -74,19 +81,23 @@ class DSG_Shortcode {
 
         $template_title  = get_the_title( $template_id );
         $output_example  = get_post_meta( $template_id, '_ds_output_example', true );
+        $allow_save      = get_post_meta( $template_id, '_ds_allow_save', true );
+        $show_history    = get_post_meta( $template_id, '_ds_show_history', true );
         $theme           = in_array( $atts['theme'], [ 'light', 'dark' ], true ) ? $atts['theme'] : 'light';
 
-        return self::build_html( $template_id, $template_title, $atts['placeholder'], $atts['button_text'], $output_example, $theme );
+        return self::build_html( $template_id, $template_title, $atts['placeholder'], $atts['button_text'], $output_example, $theme, ! empty( $allow_save ), ! empty( $show_history ) );
     }
 
-    public static function build_html( int $template_id, string $title, string $placeholder, string $button_text, string $output_example, string $theme ): string {
+    public static function build_html( int $template_id, string $title, string $placeholder, string $button_text, string $output_example, string $theme, bool $allow_save = false, bool $show_history = false ): string {
         $uid = 'dsg-' . wp_unique_id();
 
         ob_start();
         ?>
         <div id="<?php echo esc_attr( $uid ); ?>"
              class="dsg-generator dsg-theme-<?php echo esc_attr( $theme ); ?>"
-             data-template-id="<?php echo esc_attr( $template_id ); ?>">
+             data-template-id="<?php echo esc_attr( $template_id ); ?>"
+             data-saveable="<?php echo $allow_save ? '1' : '0'; ?>"
+             data-show-history="<?php echo $show_history ? '1' : '0'; ?>">
 
             <?php if ( $title ) : ?>
                 <div class="dsg-header">
@@ -117,6 +128,12 @@ class DSG_Shortcode {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         <span><?php esc_html_e( '重新生成', 'deepseek-generator' ); ?></span>
                     </button>
+                    <?php if ( $allow_save ) : ?>
+                        <button type="button" class="dsg-btn-icon dsg-btn-save" title="<?php esc_attr_e( '保存到展示墙', 'deepseek-generator' ); ?>" style="display:none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            <span><?php esc_html_e( '保存', 'deepseek-generator' ); ?></span>
+                        </button>
+                    <?php endif; ?>
                 </div>
                 <div class="dsg-output-content"></div>
             </div>
@@ -125,6 +142,20 @@ class DSG_Shortcode {
                 <div class="dsg-example">
                     <div class="dsg-example-label"><?php esc_html_e( '输出样例', 'deepseek-generator' ); ?></div>
                     <div class="dsg-example-content"><?php echo nl2br( esc_html( $output_example ) ); ?></div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ( $show_history ) : ?>
+                <div class="dsg-history">
+                    <div class="dsg-history-header">
+                        <h4 class="dsg-history-title"><?php esc_html_e( '历史生成记录', 'deepseek-generator' ); ?></h4>
+                    </div>
+                    <div class="dsg-history-list"></div>
+                    <div class="dsg-history-more" style="display:none;">
+                        <button type="button" class="dsg-btn-icon dsg-btn-load-more">
+                            <?php esc_html_e( '加载更多', 'deepseek-generator' ); ?>
+                        </button>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>

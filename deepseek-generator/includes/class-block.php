@@ -26,9 +26,11 @@ class DSG_Block {
         $list = [ [ 'value' => 0, 'label' => __( '— 请选择模板 —', 'deepseek-generator' ) ] ];
         foreach ( $templates as $t ) {
             $list[] = [
-                'value'   => $t->ID,
-                'label'   => $t->post_title,
-                'example' => get_post_meta( $t->ID, '_ds_output_example', true ),
+                'value'       => $t->ID,
+                'label'       => $t->post_title,
+                'example'     => get_post_meta( $t->ID, '_ds_output_example', true ),
+                'allowSave'   => ! empty( get_post_meta( $t->ID, '_ds_allow_save', true ) ),
+                'showHistory' => ! empty( get_post_meta( $t->ID, '_ds_show_history', true ) ),
             ];
         }
 
@@ -49,7 +51,9 @@ class DSG_Block {
         $show_example   = $attributes['showExample'] ?? true;
         $theme          = in_array( $attributes['theme'] ?? 'light', [ 'light', 'dark' ], true ) ? $attributes['theme'] : 'light';
         $output_example = $show_example ? get_post_meta( $template_id, '_ds_output_example', true ) : '';
+        $allow_save     = ! empty( get_post_meta( $template_id, '_ds_allow_save', true ) );
+        $show_history   = ! empty( get_post_meta( $template_id, '_ds_show_history', true ) );
 
-        return DSG_Shortcode::build_html( $template_id, $title, $placeholder, $button_text, $output_example, $theme );
+        return DSG_Shortcode::build_html( $template_id, $title, $placeholder, $button_text, $output_example, $theme, $allow_save, $show_history );
     }
 }

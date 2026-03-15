@@ -297,6 +297,158 @@
     border-color: var(--dsg-error) !important;
 }
 
+/* ── Save Button ── */
+
+.dsg-btn-save.dsg-saved {
+    color: #16a34a;
+    border-color: #16a34a;
+}
+
+/* ── History Section ── */
+
+.dsg-history {
+    margin-top: 20px;
+    border-top: 1px solid var(--dsg-border);
+    padding-top: 20px;
+}
+
+.dsg-history-header {
+    margin-bottom: 12px;
+}
+
+.dsg-history-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dsg-text);
+}
+
+.dsg-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dsg-history-empty {
+    text-align: center;
+    color: var(--dsg-text-muted);
+    font-size: 14px;
+    padding: 24px 0;
+}
+
+.dsg-history-card {
+    border: 1px solid var(--dsg-border);
+    border-radius: 8px;
+    background: var(--dsg-surface);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.dsg-history-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dsg-history-meta {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--dsg-bg);
+    border-bottom: 1px solid var(--dsg-border);
+    font-size: 12px;
+    color: var(--dsg-text-muted);
+}
+
+.dsg-history-author {
+    font-weight: 500;
+}
+
+.dsg-history-prompt {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--dsg-text-muted);
+    background: var(--dsg-bg);
+    border-bottom: 1px solid var(--dsg-border);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dsg-history-body {
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.dsg-history-body p {
+    margin: 0 0 8px;
+}
+
+.dsg-history-body p:last-child {
+    margin-bottom: 0;
+}
+
+.dsg-history-body pre {
+    background: var(--dsg-bg);
+    border: 1px solid var(--dsg-border);
+    border-radius: 6px;
+    padding: 10px;
+    overflow-x: auto;
+    font-size: 13px;
+}
+
+.dsg-history-body code {
+    font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+    font-size: 0.9em;
+}
+
+.dsg-history-body :not(pre) > code {
+    background: rgba(79, 70, 229, 0.08);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.dsg-history-more {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.dsg-btn-load-more {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 20px;
+    font-size: 14px;
+    color: var(--dsg-primary);
+    background: transparent;
+    border: 1px solid var(--dsg-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+}
+
+.dsg-btn-load-more:hover {
+    background: var(--dsg-primary);
+    color: #fff;
+}
+
+/* New item highlight */
+@keyframes dsg-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dsg-history-new {
+    animation: dsg-fade-in 0.4s ease-out;
+}
+
 /* ── Responsive ── */
 
 @media ( max-width: 600px ) {
@@ -308,5 +460,10 @@
     .dsg-btn-generate {
         width: 100%;
         justify-content: center;
+    }
+
+    .dsg-history-meta {
+        flex-direction: column;
+        gap: 2px;
     }
 }

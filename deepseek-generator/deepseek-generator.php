@@ -27,12 +27,14 @@ require_once DSG_PLUGIN_DIR . 'includes/class-api.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-admin.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-shortcode.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-block.php';
+require_once DSG_PLUGIN_DIR . 'includes/class-history.php';
 
 register_activation_hook( __FILE__, 'dsg_activate' );
 register_deactivation_hook( __FILE__, 'dsg_deactivate' );
 
 function dsg_activate() {
     DSG_Admin::register_prompt_cpt();
+    DSG_History::create_table();
     flush_rewrite_rules();
 
     if ( ! get_option( 'dsg_settings' ) ) {
@@ -62,6 +64,11 @@ add_action( 'admin_enqueue_scripts', [ 'DSG_Admin', 'enqueue_admin_assets' ] );
 
 add_action( 'wp_ajax_deepseek_generate', [ 'DSG_API', 'ajax_handler' ] );
 add_action( 'wp_ajax_nopriv_deepseek_generate', [ 'DSG_API', 'ajax_handler_nopriv' ] );
+
+add_action( 'wp_ajax_dsg_save_output', [ 'DSG_History', 'ajax_save' ] );
+add_action( 'wp_ajax_nopriv_dsg_save_output', [ 'DSG_History', 'ajax_save_nopriv' ] );
+add_action( 'wp_ajax_dsg_load_outputs', [ 'DSG_History', 'ajax_load' ] );
+add_action( 'wp_ajax_nopriv_dsg_load_outputs', [ 'DSG_History', 'ajax_load_nopriv' ] );
 
 add_action( 'init', [ 'DSG_Block', 'register' ] );
 

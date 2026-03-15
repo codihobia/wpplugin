@@ -8,6 +8,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 delete_option( 'dsg_settings' );
+delete_option( 'dsg_db_version' );
+
+global $wpdb;
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}dsg_outputs" );
 
 $templates = get_posts( [
     'post_type'      => 'ds_prompt_template',
@@ -20,7 +24,6 @@ foreach ( $templates as $id ) {
     wp_delete_post( $id, true );
 }
 
-global $wpdb;
 $wpdb->query(
     $wpdb->prepare(
         "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s",
