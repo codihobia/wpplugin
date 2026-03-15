@@ -209,6 +209,18 @@ class DSG_API {
 
         $user_message = str_replace( '{{user_input}}', $user_input, $user_template ?: '{{user_input}}' );
 
+        $style_ref       = get_post_meta( $template_id, '_ds_style_reference', true );
+        $style_instruction = get_post_meta( $template_id, '_ds_style_instruction', true );
+        if ( trim( (string) $style_ref ) !== '' || trim( (string) $style_instruction ) !== '' ) {
+            $system_prompt .= "\n\n## 风格与用词要求\n";
+            if ( trim( (string) $style_ref ) !== '' ) {
+                $system_prompt .= __( '请模仿以下参考文本的风格、用词与句式：', 'deepseek-generator' ) . "\n\n" . $style_ref . "\n\n";
+            }
+            if ( trim( (string) $style_instruction ) !== '' ) {
+                $system_prompt .= __( '补充要求：', 'deepseek-generator' ) . $style_instruction . "\n";
+            }
+        }
+
         $options = [];
         if ( $temperature !== '' && $temperature !== false ) {
             $options['temperature'] = (float) $temperature;

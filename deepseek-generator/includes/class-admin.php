@@ -225,13 +225,15 @@ class DSG_Admin {
     public static function render_prompt_meta_box( $post ): void {
         wp_nonce_field( 'dsg_save_prompt', 'dsg_prompt_nonce' );
 
-        $system_prompt  = get_post_meta( $post->ID, '_ds_system_prompt', true );
-        $user_template  = get_post_meta( $post->ID, '_ds_user_prompt_template', true );
-        $output_example = get_post_meta( $post->ID, '_ds_output_example', true );
-        $temperature    = get_post_meta( $post->ID, '_ds_temperature', true );
-        $max_tokens     = get_post_meta( $post->ID, '_ds_max_tokens', true );
-        $allow_save     = get_post_meta( $post->ID, '_ds_allow_save', true );
-        $show_history   = get_post_meta( $post->ID, '_ds_show_history', true );
+        $system_prompt    = get_post_meta( $post->ID, '_ds_system_prompt', true );
+        $user_template    = get_post_meta( $post->ID, '_ds_user_prompt_template', true );
+        $output_example   = get_post_meta( $post->ID, '_ds_output_example', true );
+        $style_reference  = get_post_meta( $post->ID, '_ds_style_reference', true );
+        $style_instruction = get_post_meta( $post->ID, '_ds_style_instruction', true );
+        $temperature      = get_post_meta( $post->ID, '_ds_temperature', true );
+        $max_tokens       = get_post_meta( $post->ID, '_ds_max_tokens', true );
+        $allow_save       = get_post_meta( $post->ID, '_ds_allow_save', true );
+        $show_history     = get_post_meta( $post->ID, '_ds_show_history', true );
         ?>
         <table class="form-table dsg-meta-table">
             <tr>
@@ -253,6 +255,20 @@ class DSG_Admin {
                 <td>
                     <textarea id="ds_output_example" name="ds_output_example" rows="5" class="large-text"><?php echo esc_textarea( $output_example ); ?></textarea>
                     <p class="description"><?php esc_html_e( '展示给用户的示例输出，帮助用户理解该模板的用途。', 'deepseek-generator' ); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="ds_style_reference"><?php esc_html_e( '参考文本（风格仿写样本）', 'deepseek-generator' ); ?></label></th>
+                <td>
+                    <textarea id="ds_style_reference" name="ds_style_reference" rows="4" class="large-text"><?php echo esc_textarea( $style_reference ); ?></textarea>
+                    <p class="description"><?php esc_html_e( '用于让 AI 模仿该文本的风格、用词与句式。留空则不启用仿写。', 'deepseek-generator' ); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="ds_style_instruction"><?php esc_html_e( '风格/修辞说明', 'deepseek-generator' ); ?></label></th>
+                <td>
+                    <input type="text" id="ds_style_instruction" name="ds_style_instruction" value="<?php echo esc_attr( $style_instruction ); ?>" class="large-text" />
+                    <p class="description"><?php esc_html_e( '如：正式书面、排比比喻、口语短句等。留空则不追加。', 'deepseek-generator' ); ?></p>
                 </td>
             </tr>
             <tr>
@@ -312,9 +328,11 @@ class DSG_Admin {
         }
 
         $fields = [
-            '_ds_system_prompt'        => 'ds_system_prompt',
-            '_ds_user_prompt_template' => 'ds_user_prompt_template',
-            '_ds_output_example'       => 'ds_output_example',
+            '_ds_system_prompt'         => 'ds_system_prompt',
+            '_ds_user_prompt_template'  => 'ds_user_prompt_template',
+            '_ds_output_example'        => 'ds_output_example',
+            '_ds_style_reference'       => 'ds_style_reference',
+            '_ds_style_instruction'     => 'ds_style_instruction',
         ];
         foreach ( $fields as $meta_key => $post_key ) {
             if ( isset( $_POST[ $post_key ] ) ) {
