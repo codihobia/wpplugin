@@ -25,6 +25,7 @@ define( 'DSG_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 require_once DSG_PLUGIN_DIR . 'includes/class-api.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-admin.php';
+require_once DSG_PLUGIN_DIR . 'includes/class-retriever.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-shortcode.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-block.php';
 require_once DSG_PLUGIN_DIR . 'includes/class-history.php';
@@ -34,6 +35,7 @@ register_deactivation_hook( __FILE__, 'dsg_deactivate' );
 
 function dsg_activate() {
     DSG_Admin::register_prompt_cpt();
+    DSG_Admin::register_reference_cpt();
     DSG_History::create_table();
     flush_rewrite_rules();
 
@@ -56,6 +58,7 @@ function dsg_deactivate() {
 }
 
 add_action( 'init', [ 'DSG_Admin', 'register_prompt_cpt' ] );
+add_action( 'init', [ 'DSG_Admin', 'register_reference_cpt' ] );
 add_action( 'admin_menu', [ 'DSG_Admin', 'add_menu_page' ] );
 add_action( 'admin_init', [ 'DSG_Admin', 'register_settings' ] );
 add_action( 'add_meta_boxes', [ 'DSG_Admin', 'add_prompt_meta_boxes' ] );

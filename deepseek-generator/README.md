@@ -14,6 +14,7 @@
 - **Light / Dark 主题** — CSS 变量驱动，可通过 Shortcode 属性或 Block 设置切换
 - **生成记录持久化** — 用户可将生成结果保存到数据库，其他访客也能看到
 - **后台记录管理** — 管理员可筛选、搜索、隐藏、删除已保存的生成记录
+- **RAG 参考检索** — 从参考文档库中按关键词/标签检索相关材料，拼接到提示词以增强行文逻辑性和意象联系
 - **安全机制** — API Key AES-256 加密存储、nonce 验证、频率限制（per user/IP）、访客访问控制
 
 ## 环境要求
@@ -61,6 +62,22 @@
 | Max Tokens 覆盖 | 留空则使用全局值 |
 | 允许保存 | 勾选后用户可将生成结果保存到数据库 |
 | 展示历史 | 勾选后前端页面展示该模板的历史生成记录 |
+| RAG 参考检索 | 勾选启用后，生成时自动从参考文档库检索相关材料拼入提示词 |
+| 参考关键词 | 逗号分隔的主题词，用于在参考文档库中搜索。留空则仅使用用户输入 |
+| 参考标签 | 逗号分隔的标签 slug，按标签筛选参考文档 |
+| 最大参考条数 | 检索返回的最大参考文档数，留空默认 3 条 |
+
+### 参考文档库（DeepSeek AI → 参考文档库）
+
+参考文档库用于存放高质量范文、意象示例或主题背景说明，供 RAG 检索使用。每篇参考文档包含：
+
+| 字段 | 说明 |
+|---|---|
+| 标题 | 简要描述主题或用途 |
+| 正文 | 参考内容（支持 WordPress 编辑器） |
+| 参考标签 | 自定义分类 `ds_ref_tag`，用于筛选 |
+
+生成时，若模板启用了 RAG，插件将根据模板预设关键词/标签及用户输入，从参考文档库中检索若干篇最相关的文档，以结构化方式拼接到 System Prompt 中，引导 AI 学习其逻辑结构和意象衔接方式。
 
 ## 使用方式
 
@@ -91,6 +108,7 @@ deepseek-generator/
 ├── includes/
 │   ├── class-api.php             # DeepSeek API 通信（普通/流式）、AJAX 处理
 │   ├── class-admin.php           # 后台设置页、提示词模板 CPT & Meta Box
+│   ├── class-retriever.php        # RAG 参考检索：关键词/标签检索参考文档库
 │   ├── class-shortcode.php       # [deepseek_gen] Shortcode 注册与 HTML 渲染
 │   ├── class-block.php           # Gutenberg Block 注册与 PHP render_callback
 │   └── class-history.php         # 生成记录：自定义表、CRUD、AJAX、后台管理页
@@ -113,6 +131,7 @@ deepseek-generator/
 |---|---|
 | 全局设置 | `wp_options` → `dsg_settings` |
 | 提示词模板 | 自定义文章类型 `ds_prompt_template` + `wp_postmeta` |
+| 参考文档库 | 自定义文章类型 `ds_reference_doc` + 自定义分类 `ds_ref_tag` |
 | 生成记录 | 自定义表 `{prefix}_dsg_outputs` |
 | 频率限制计数 | WordPress Transients |
 

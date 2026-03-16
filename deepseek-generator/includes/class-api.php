@@ -221,6 +221,10 @@ class DSG_API {
             }
         }
 
+        $references    = DSG_Retriever::get_references( $template_id, $user_input );
+        $ref_context   = DSG_Retriever::format_context( $references );
+        $system_prompt .= $ref_context;
+
         $options = [];
         if ( $temperature !== '' && $temperature !== false ) {
             $options['temperature'] = (float) $temperature;
