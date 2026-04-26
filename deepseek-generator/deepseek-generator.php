@@ -43,7 +43,7 @@ function dsg_activate() {
         update_option( 'dsg_settings', [
             'api_key'      => '',
             'base_url'     => 'https://api.deepseek.com',
-            'model'        => 'deepseek-chat',
+            'model'        => 'deepseek-v4-pro',
             'temperature'  => 1,
             'max_tokens'   => 2048,
             'top_p'        => 1,

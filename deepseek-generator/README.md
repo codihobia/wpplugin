@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- **DeepSeek API 集成** — 支持 `deepseek-chat` (V3) 与 `deepseek-reasoner` (R1) 两种模型
+- **DeepSeek API 集成** — 支持 `deepseek-v4-pro` 与 `deepseek-v4-flash` (R1) 两种模型
 - **Shortcode & Gutenberg Block** — 两种嵌入方式，适配经典编辑器和块编辑器
 - **SSE 流式输出** — 实时逐字展示生成结果，体验流畅
 - **自定义提示词模板** — 后台管理 System Prompt、User Prompt 模板（支持 `{{user_input}}` 占位符）、输出样例

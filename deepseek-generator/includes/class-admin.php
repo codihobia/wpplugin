@@ -157,7 +157,7 @@ class DSG_Admin {
         }
 
         $safe['base_url']     = esc_url_raw( $input['base_url'] ?? 'https://api.deepseek.com' );
-        $safe['model']        = sanitize_text_field( $input['model'] ?? 'deepseek-chat' );
+        $safe['model']        = sanitize_text_field( $input['model'] ?? 'deepseek-v4-pro' );
         $safe['temperature']  = max( 0, min( 2, (float) ( $input['temperature'] ?? 1 ) ) );
         $safe['max_tokens']   = max( 1, (int) ( $input['max_tokens'] ?? 2048 ) );
         $safe['top_p']        = max( 0, min( 1, (float) ( $input['top_p'] ?? 1 ) ) );
@@ -191,9 +191,9 @@ class DSG_Admin {
     }
 
     public static function field_model(): void {
-        $model = self::opt( 'model', 'deepseek-chat' );
+        $model = self::opt( 'model', 'deepseek-v4-pro' );
         echo '<select name="dsg_settings[model]">';
-        foreach ( [ 'deepseek-chat' => 'DeepSeek Chat (V3)', 'deepseek-reasoner' => 'DeepSeek Reasoner (R1)' ] as $val => $label ) {
+        foreach ( [ 'deepseek-v4-pro' => 'DeepSeek V4 Pro', 'deepseek-v4-flash' => 'DeepSeek V4 Flash' ] as $val => $label ) {
             printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $model, $val, false ), esc_html( $label ) );
         }
         echo '</select>';
