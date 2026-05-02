@@ -504,7 +504,7 @@
 
 .dsg-danmaku-text {
     position: fixed;
-    z-index: 0;
+    z-index: 2;
     pointer-events: none;
     user-select: none;
     white-space: nowrap;
