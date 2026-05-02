@@ -24,6 +24,28 @@ foreach ( $templates as $id ) {
     wp_delete_post( $id, true );
 }
 
+$ref_docs = get_posts( [
+    'post_type'      => 'ds_reference_doc',
+    'posts_per_page' => -1,
+    'post_status'    => 'any',
+    'fields'         => 'ids',
+] );
+
+foreach ( $ref_docs as $id ) {
+    wp_delete_post( $id, true );
+}
+
+$ref_terms = get_terms( [
+    'taxonomy'   => 'ds_ref_tag',
+    'hide_empty' => false,
+    'fields'     => 'ids',
+] );
+if ( ! is_wp_error( $ref_terms ) ) {
+    foreach ( $ref_terms as $term_id ) {
+        wp_delete_term( $term_id, 'ds_ref_tag' );
+    }
+}
+
 $wpdb->query(
     $wpdb->prepare(
         "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s",

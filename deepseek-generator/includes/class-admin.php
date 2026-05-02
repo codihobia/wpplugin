@@ -6,6 +6,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class DSG_Admin {
 
+    public static function register_reference_cpt(): void {
+        register_taxonomy( 'ds_ref_tag', 'ds_reference_doc', [
+            'labels' => [
+                'name'          => __( '参考标签', 'deepseek-generator' ),
+                'singular_name' => __( '参考标签', 'deepseek-generator' ),
+                'search_items'  => __( '搜索标签', 'deepseek-generator' ),
+                'all_items'     => __( '所有标签', 'deepseek-generator' ),
+                'edit_item'     => __( '编辑标签', 'deepseek-generator' ),
+                'update_item'   => __( '更新标签', 'deepseek-generator' ),
+                'add_new_item'  => __( '添加新标签', 'deepseek-generator' ),
+                'new_item_name' => __( '新标签名称', 'deepseek-generator' ),
+                'menu_name'     => __( '参考标签', 'deepseek-generator' ),
+            ],
+            'public'       => false,
+            'show_ui'      => true,
+            'show_in_menu' => true,
+            'hierarchical' => false,
+            'rewrite'      => false,
+        ] );
+
+        register_post_type( 'ds_reference_doc', [
+            'labels' => [
+                'name'               => __( '参考文档', 'deepseek-generator' ),
+                'singular_name'      => __( '参考文档', 'deepseek-generator' ),
+                'add_new'            => __( '添加文档', 'deepseek-generator' ),
+                'add_new_item'       => __( '添加新参考文档', 'deepseek-generator' ),
+                'edit_item'          => __( '编辑参考文档', 'deepseek-generator' ),
+                'new_item'           => __( '新参考文档', 'deepseek-generator' ),
+                'view_item'          => __( '查看参考文档', 'deepseek-generator' ),
+                'search_items'       => __( '搜索参考文档', 'deepseek-generator' ),
+                'not_found'          => __( '未找到参考文档', 'deepseek-generator' ),
+                'not_found_in_trash' => __( '回收站中无参考文档', 'deepseek-generator' ),
+                'all_items'          => __( '参考文档库', 'deepseek-generator' ),
+                'menu_name'          => __( '参考文档库', 'deepseek-generator' ),
+            ],
+            'public'       => false,
+            'show_ui'      => true,
+            'show_in_menu' => 'dsg-settings',
+            'supports'     => [ 'title', 'editor' ],
+            'has_archive'  => false,
+            'rewrite'      => false,
+            'taxonomies'   => [ 'ds_ref_tag' ],
+        ] );
+    }
+
     public static function register_prompt_cpt(): void {
         register_post_type( 'ds_prompt_template', [
             'labels' => [
@@ -112,7 +157,7 @@ class DSG_Admin {
         }
 
         $safe['base_url']     = esc_url_raw( $input['base_url'] ?? 'https://api.deepseek.com' );
-        $safe['model']        = sanitize_text_field( $input['model'] ?? 'deepseek-chat' );
+        $safe['model']        = sanitize_text_field( $input['model'] ?? 'deepseek-v4-pro' );
         $safe['temperature']  = max( 0, min( 2, (float) ( $input['temperature'] ?? 1 ) ) );
         $safe['max_tokens']   = max( 1, (int) ( $input['max_tokens'] ?? 2048 ) );
         $safe['top_p']        = max( 0, min( 1, (float) ( $input['top_p'] ?? 1 ) ) );
@@ -146,9 +191,9 @@ class DSG_Admin {
     }
 
     public static function field_model(): void {
-        $model = self::opt( 'model', 'deepseek-chat' );
+        $model = self::opt( 'model', 'deepseek-v4-pro' );
         echo '<select name="dsg_settings[model]">';
-        foreach ( [ 'deepseek-chat' => 'DeepSeek Chat (V3)', 'deepseek-reasoner' => 'DeepSeek Reasoner (R1)' ] as $val => $label ) {
+        foreach ( [ 'deepseek-v4-pro' => 'DeepSeek V4 Pro', 'deepseek-v4-flash' => 'DeepSeek V4 Flash' ] as $val => $label ) {
             printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $model, $val, false ), esc_html( $label ) );
         }
         echo '</select>';
@@ -230,6 +275,10 @@ class DSG_Admin {
         $output_example   = get_post_meta( $post->ID, '_ds_output_example', true );
         $style_reference  = get_post_meta( $post->ID, '_ds_style_reference', true );
         $style_instruction = get_post_meta( $post->ID, '_ds_style_instruction', true );
+        $ref_enabled      = get_post_meta( $post->ID, '_ds_ref_enabled', true );
+        $ref_keywords     = get_post_meta( $post->ID, '_ds_ref_keywords', true );
+        $ref_tags         = get_post_meta( $post->ID, '_ds_ref_tags', true );
+        $ref_limit        = get_post_meta( $post->ID, '_ds_ref_limit', true );
         $temperature      = get_post_meta( $post->ID, '_ds_temperature', true );
         $max_tokens       = get_post_meta( $post->ID, '_ds_max_tokens', true );
         $allow_save       = get_post_meta( $post->ID, '_ds_allow_save', true );
@@ -269,6 +318,38 @@ class DSG_Admin {
                 <td>
                     <input type="text" id="ds_style_instruction" name="ds_style_instruction" value="<?php echo esc_attr( $style_instruction ); ?>" class="large-text" />
                     <p class="description"><?php esc_html_e( '如：正式书面、排比比喻、口语短句等。留空则不追加。', 'deepseek-generator' ); ?></p>
+                </td>
+            </tr>
+            <tr>
+                <th><?php esc_html_e( 'RAG 参考检索', 'deepseek-generator' ); ?></th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="ds_ref_enabled" value="1" <?php checked( $ref_enabled, '1' ); ?> />
+                        <?php esc_html_e( '启用参考文档检索（RAG）', 'deepseek-generator' ); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e( '勾选后，生成时将从参考文档库中检索相关材料并拼接到提示词，以增强行文逻辑性。', 'deepseek-generator' ); ?></p>
+
+                    <fieldset style="margin-top:10px;padding:10px;border:1px solid #ccd0d4;border-radius:4px;">
+                        <legend style="padding:0 6px;font-weight:600;"><?php esc_html_e( '检索配置', 'deepseek-generator' ); ?></legend>
+
+                        <p>
+                            <label for="ds_ref_keywords"><?php esc_html_e( '参考关键词', 'deepseek-generator' ); ?></label><br>
+                            <input type="text" id="ds_ref_keywords" name="ds_ref_keywords" value="<?php echo esc_attr( $ref_keywords ); ?>" class="large-text" />
+                            <span class="description"><?php esc_html_e( '逗号分隔的主题词，用于在参考文档中搜索。留空则仅使用用户输入。', 'deepseek-generator' ); ?></span>
+                        </p>
+
+                        <p>
+                            <label for="ds_ref_tags"><?php esc_html_e( '参考标签', 'deepseek-generator' ); ?></label><br>
+                            <input type="text" id="ds_ref_tags" name="ds_ref_tags" value="<?php echo esc_attr( $ref_tags ); ?>" class="large-text" />
+                            <span class="description"><?php esc_html_e( '逗号分隔的标签 slug，筛选参考文档库中带有这些标签的文档。留空则不按标签筛选。', 'deepseek-generator' ); ?></span>
+                        </p>
+
+                        <p>
+                            <label for="ds_ref_limit"><?php esc_html_e( '最大参考条数', 'deepseek-generator' ); ?></label><br>
+                            <input type="number" id="ds_ref_limit" name="ds_ref_limit" value="<?php echo esc_attr( $ref_limit ); ?>" min="1" max="10" step="1" class="small-text" />
+                            <span class="description"><?php esc_html_e( '留空默认 3 条。', 'deepseek-generator' ); ?></span>
+                        </p>
+                    </fieldset>
                 </td>
             </tr>
             <tr>
@@ -353,7 +434,28 @@ class DSG_Admin {
             }
         }
 
-        $checkboxes = [ '_ds_allow_save' => 'ds_allow_save', '_ds_show_history' => 'ds_show_history' ];
+        $text_fields = [
+            '_ds_ref_keywords' => 'ds_ref_keywords',
+            '_ds_ref_tags'     => 'ds_ref_tags',
+        ];
+        foreach ( $text_fields as $meta_key => $post_key ) {
+            if ( isset( $_POST[ $post_key ] ) ) {
+                update_post_meta( $post_id, $meta_key, sanitize_text_field( $_POST[ $post_key ] ) );
+            }
+        }
+
+        $ref_limit_val = $_POST['ds_ref_limit'] ?? '';
+        if ( $ref_limit_val === '' ) {
+            delete_post_meta( $post_id, '_ds_ref_limit' );
+        } else {
+            update_post_meta( $post_id, '_ds_ref_limit', sanitize_text_field( $ref_limit_val ) );
+        }
+
+        $checkboxes = [
+            '_ds_allow_save'  => 'ds_allow_save',
+            '_ds_show_history' => 'ds_show_history',
+            '_ds_ref_enabled' => 'ds_ref_enabled',
+        ];
         foreach ( $checkboxes as $meta_key => $post_key ) {
             update_post_meta( $post_id, $meta_key, empty( $_POST[ $post_key ] ) ? '' : '1' );
         }
@@ -361,7 +463,7 @@ class DSG_Admin {
 
     public static function enqueue_admin_assets( string $hook ): void {
         $screen = get_current_screen();
-        if ( $screen && $screen->post_type === 'ds_prompt_template' ) {
+        if ( $screen && in_array( $screen->post_type, [ 'ds_prompt_template', 'ds_reference_doc' ], true ) ) {
             wp_enqueue_style( 'dsg-admin', DSG_PLUGIN_URL . 'assets/css/admin.css', [], DSG_VERSION );
         }
     }

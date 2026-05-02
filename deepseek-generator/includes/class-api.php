@@ -10,7 +10,7 @@ class DSG_API {
         $defaults = [
             'api_key'      => '',
             'base_url'     => 'https://api.deepseek.com',
-            'model'        => 'deepseek-chat',
+            'model'        => 'deepseek-v4-pro',
             'temperature'  => 1,
             'max_tokens'   => 2048,
             'top_p'        => 1,
@@ -220,6 +220,10 @@ class DSG_API {
                 $system_prompt .= __( '补充要求：', 'deepseek-generator' ) . $style_instruction . "\n";
             }
         }
+
+        $references    = DSG_Retriever::get_references( $template_id, $user_input );
+        $ref_context   = DSG_Retriever::format_context( $references );
+        $system_prompt .= $ref_context;
 
         $options = [];
         if ( $temperature !== '' && $temperature !== false ) {
