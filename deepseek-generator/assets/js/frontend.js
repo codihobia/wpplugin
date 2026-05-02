@@ -678,6 +678,81 @@
             return /^(linear|radial|conic)-gradient|repeating-/.test( s );
         }
 
+        function getBlockRects() {
+            var blocks = document.querySelectorAll( '.dsg-generator' );
+            var rects  = [];
+            var pad    = 30;
+            for ( var i = 0; i < blocks.length; i++ ) {
+                var r = blocks[ i ].getBoundingClientRect();
+                rects.push( {
+                    left:   r.left - pad,
+                    top:    r.top - pad,
+                    right:  r.right + pad,
+                    bottom: r.bottom + pad
+                } );
+            }
+            return rects;
+        }
+
+        function calcMinDistance( text, fontSizeRem ) {
+            var fontSizePx     = fontSizeRem * 16;
+            var estimatedWidth = text.length * fontSizePx * 0.7;
+            return Math.max( 60, estimatedWidth * 1.2 );
+        }
+
+        function findSafePosition( text, fontSizeRem ) {
+            var vw    = window.innerWidth;
+            var vh    = window.innerHeight;
+            var rects = getBlockRects();
+            var minD  = calcMinDistance( text, fontSizeRem );
+
+            function insideBlock( x, y ) {
+                for ( var i = 0; i < rects.length; i++ ) {
+                    var b = rects[ i ];
+                    if ( x >= b.left && x <= b.right && y >= b.top && y <= b.bottom ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function tooClose( x, y, threshold ) {
+                for ( var j = 0; j < activeDanmaku.length; j++ ) {
+                    var a = activeDanmaku[ j ];
+                    var dx = x - a.x;
+                    var dy = y - a.y;
+                    if ( Math.sqrt( dx * dx + dy * dy ) < threshold ) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            var x, y;
+
+            for ( var attempt = 0; attempt < 20; attempt++ ) {
+                x = randomFloat( vw * 0.03, vw * 0.85 );
+                y = randomFloat( vh * 0.05, vh * 0.85 );
+                if ( ! insideBlock( x, y ) && ! tooClose( x, y, minD ) ) {
+                    return { x: x, y: y };
+                }
+            }
+
+            var relaxedD = Math.max( 40, minD * 0.5 );
+            for ( attempt = 0; attempt < 10; attempt++ ) {
+                x = randomFloat( vw * 0.03, vw * 0.85 );
+                y = randomFloat( vh * 0.05, vh * 0.85 );
+                if ( ! insideBlock( x, y ) && ! tooClose( x, y, relaxedD ) ) {
+                    return { x: x, y: y };
+                }
+            }
+
+            return {
+                x: randomFloat( vw * 0.03, vw * 0.85 ),
+                y: randomFloat( vh * 0.05, vh * 0.85 )
+            };
+        }
+
         function spawn() {
             if ( ! isPageVisible ) return;
             if ( activeDanmaku.length >= config.max_count ) return;
@@ -696,11 +771,9 @@
             var fadeIn    = config.fade_in;
             var fadeOut   = config.fade_out;
 
-            var vw = window.innerWidth;
-            var vh = window.innerHeight;
-
-            var x = randomFloat( vw * 0.03, vw * 0.85 );
-            var y = randomFloat( vh * 0.05, vh * 0.85 );
+            var pos = findSafePosition( text, size );
+            var x   = pos.x;
+            var y   = pos.y;
 
             var driftRange = config.drift_range;
             var startX     = x;
