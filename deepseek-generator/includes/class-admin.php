@@ -143,6 +143,21 @@ class DSG_Admin {
 
         add_settings_field( 'dsg_allow_guests', __( '允许未登录用户', 'deepseek-generator' ), [ __CLASS__, 'field_allow_guests' ], 'dsg-settings', 'dsg_access_section' );
         add_settings_field( 'dsg_rate_limit', __( '频率限制（次/分钟）', 'deepseek-generator' ), [ __CLASS__, 'field_rate_limit' ], 'dsg-settings', 'dsg_access_section' );
+
+        add_settings_section(
+            'dsg_smoke_section',
+            __( '烟雾背景特效', 'deepseek-generator' ),
+            null,
+            'dsg-settings'
+        );
+
+        add_settings_field( 'dsg_smoke_enabled', __( '启用烟雾背景', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_enabled' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_particles', __( '粒子数量', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_particles' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_speed', __( '上升速度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_speed' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_spread', __( '扩散幅度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_spread' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_opacity', __( '透明度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_opacity' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_breathe', __( '脉动强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_breathe' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_color', __( '烟雾颜色', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_color' ], 'dsg-settings', 'dsg_smoke_section' );
     }
 
     public static function sanitize_settings( $input ): array {
@@ -163,6 +178,14 @@ class DSG_Admin {
         $safe['top_p']        = max( 0, min( 1, (float) ( $input['top_p'] ?? 1 ) ) );
         $safe['allow_guests'] = ! empty( $input['allow_guests'] );
         $safe['rate_limit']   = max( 0, (int) ( $input['rate_limit'] ?? 10 ) );
+
+        $safe['smoke_enabled']   = ! empty( $input['smoke_enabled'] );
+        $safe['smoke_particles'] = max( 10, min( 300, (int) ( $input['smoke_particles'] ?? 80 ) ) );
+        $safe['smoke_speed']     = max( 0.1, min( 3.0, (float) ( $input['smoke_speed'] ?? 0.6 ) ) );
+        $safe['smoke_opacity']   = max( 0.05, min( 0.8, (float) ( $input['smoke_opacity'] ?? 0.3 ) ) );
+        $safe['smoke_color']     = sanitize_hex_color( $input['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5';
+        $safe['smoke_spread']    = max( 0.3, min( 3.0, (float) ( $input['smoke_spread'] ?? 1.0 ) ) );
+        $safe['smoke_breathe']   = max( 0.0, min( 1.0, (float) ( $input['smoke_breathe'] ?? 0.5 ) ) );
 
         return $safe;
     }
@@ -234,6 +257,61 @@ class DSG_Admin {
             esc_attr( self::opt( 'rate_limit', 10 ) )
         );
         echo '<p class="description">' . esc_html__( '每个用户/IP 每分钟最大请求次数，0 表示不限制。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_enabled(): void {
+        printf(
+            '<label><input type="checkbox" name="dsg_settings[smoke_enabled]" value="1" %s /> %s</label>',
+            checked( self::opt( 'smoke_enabled' ), true, false ),
+            esc_html__( '在生成器区块底部渲染烟雾升腾背景动画', 'deepseek-generator' )
+        );
+    }
+
+    public static function field_smoke_particles(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_particles]" value="%s" min="10" max="300" step="10" class="small-text" />',
+            esc_attr( self::opt( 'smoke_particles', 80 ) )
+        );
+        echo '<p class="description">' . esc_html__( '越多越厚实，但对性能影响更大。推荐 60-120。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_speed(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_speed]" value="%s" min="0.1" max="3.0" step="0.1" class="small-text" />',
+            esc_attr( self::opt( 'smoke_speed', 0.6 ) )
+        );
+        echo '<p class="description">' . esc_html__( '烟雾上升的快慢，1.0 为正常速度。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_spread(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_spread]" value="%s" min="0.3" max="3.0" step="0.1" class="small-text" />',
+            esc_attr( self::opt( 'smoke_spread', 1.0 ) )
+        );
+        echo '<p class="description">' . esc_html__( '烟雾水平扩散的宽度，值越大扩散越宽。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_opacity(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_opacity]" value="%s" min="0.05" max="0.8" step="0.05" class="small-text" />',
+            esc_attr( self::opt( 'smoke_opacity', 0.3 ) )
+        );
+        echo '<p class="description">' . esc_html__( '烟雾的可见程度，0.05 几乎不可见，0.8 非常浓厚。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_breathe(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_breathe]" value="%s" min="0" max="1.0" step="0.05" class="small-text" />',
+            esc_attr( self::opt( 'smoke_breathe', 0.5 ) )
+        );
+        echo '<p class="description">' . esc_html__( '烟雾透明度脉动变化的幅度，0 表示不脉动。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_color(): void {
+        printf(
+            '<input type="color" name="dsg_settings[smoke_color]" value="%s" />',
+            esc_attr( self::opt( 'smoke_color', '#4f46e5' ) )
+        );
     }
 
     public static function render_settings_page(): void {

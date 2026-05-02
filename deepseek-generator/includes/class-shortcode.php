@@ -41,9 +41,12 @@ class DSG_Shortcode {
             true
         );
 
+        $smoke_settings = self::get_smoke_config();
+
         wp_localize_script( 'dsg-frontend', 'dsgConfig', [
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'dsg_nonce' ),
+            'smoke'   => $smoke_settings,
             'i18n'    => [
                 'generate'    => __( '生成', 'deepseek-generator' ),
                 'generating'  => __( '生成中...', 'deepseek-generator' ),
@@ -88,8 +91,24 @@ class DSG_Shortcode {
         return self::build_html( $template_id, $template_title, $atts['placeholder'], $atts['button_text'], $output_example, $theme, ! empty( $allow_save ), ! empty( $show_history ) );
     }
 
+    private static function get_smoke_config(): array {
+        $settings = get_option( 'dsg_settings', [] );
+        $enabled = ! empty( $settings['smoke_enabled'] );
+        return [
+            'enabled'   => $enabled,
+            'particles' => max( 10, min( 300, (int) ( $settings['smoke_particles'] ?? 80 ) ) ),
+            'speed'     => max( 0.1, min( 3.0, (float) ( $settings['smoke_speed'] ?? 0.6 ) ) ),
+            'opacity'   => max( 0.05, min( 0.8, (float) ( $settings['smoke_opacity'] ?? 0.3 ) ) ),
+            'color'     => sanitize_hex_color( $settings['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5',
+            'spread'    => max( 0.3, min( 3.0, (float) ( $settings['smoke_spread'] ?? 1.0 ) ) ),
+            'breathe'   => max( 0.0, min( 1.0, (float) ( $settings['smoke_breathe'] ?? 0.5 ) ) ),
+        ];
+    }
+
     public static function build_html( int $template_id, string $title, string $placeholder, string $button_text, string $output_example, string $theme, bool $allow_save = false, bool $show_history = false ): string {
         $uid = 'dsg-' . wp_unique_id();
+
+        $smoke_config = self::get_smoke_config();
 
         ob_start();
         ?>
@@ -98,6 +117,10 @@ class DSG_Shortcode {
              data-template-id="<?php echo esc_attr( $template_id ); ?>"
              data-saveable="<?php echo $allow_save ? '1' : '0'; ?>"
              data-show-history="<?php echo $show_history ? '1' : '0'; ?>">
+
+            <?php if ( $smoke_config['enabled'] ) : ?>
+                <canvas class="dsg-smoke-canvas" aria-hidden="true"></canvas>
+            <?php endif; ?>
 
             <?php if ( $title ) : ?>
                 <div class="dsg-header">

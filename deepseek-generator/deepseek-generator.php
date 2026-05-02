@@ -49,6 +49,13 @@ function dsg_activate() {
             'top_p'        => 1,
             'allow_guests' => false,
             'rate_limit'   => 10,
+            'smoke_enabled'  => false,
+            'smoke_particles' => 80,
+            'smoke_speed'     => 0.6,
+            'smoke_opacity'   => 0.3,
+            'smoke_color'     => '#4f46e5',
+            'smoke_spread'    => 1.0,
+            'smoke_breathe'   => 0.5,
         ] );
     }
 }
