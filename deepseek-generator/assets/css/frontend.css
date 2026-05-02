@@ -499,3 +499,26 @@
         gap: 2px;
     }
 }
+
+/* ── Danmaku Background Text ── */
+
+.dsg-danmaku-text {
+    position: fixed;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    transition: opacity linear;
+    will-change: transform, opacity;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.dsg-danmaku-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}

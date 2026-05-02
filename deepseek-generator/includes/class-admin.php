@@ -161,6 +161,23 @@ class DSG_Admin {
         add_settings_field( 'dsg_smoke_mask_bottom', __( '底部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_bottom' ], 'dsg-settings', 'dsg_smoke_section' );
         add_settings_field( 'dsg_smoke_mask_mid', __( '中部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_mid' ], 'dsg-settings', 'dsg_smoke_section' );
         add_settings_field( 'dsg_smoke_mask_top', __( '顶部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_top' ], 'dsg-settings', 'dsg_smoke_section' );
+
+        add_settings_section(
+            'dsg_danmaku_section',
+            __( '弹幕背景特效', 'deepseek-generator' ),
+            null,
+            'dsg-settings'
+        );
+
+        add_settings_field( 'dsg_danmaku_enabled', __( '启用弹幕背景', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_enabled' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_interval', __( '出现间隔 (ms)', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_interval' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_size', __( '字号范围 (rem)', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_size' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_colors', __( '颜色列表', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_colors' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_opacity', __( '透明度范围', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_opacity' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_duration', __( '停留时长 (ms)', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_duration' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_fade', __( '渐显/渐隐 (ms)', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_fade' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_max_count', __( '同屏最大条数', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_max_count' ], 'dsg-settings', 'dsg_danmaku_section' );
+        add_settings_field( 'dsg_danmaku_drift_range', __( '飘移幅度 (px)', 'deepseek-generator' ), [ __CLASS__, 'field_danmaku_drift_range' ], 'dsg-settings', 'dsg_danmaku_section' );
     }
 
     public static function sanitize_settings( $input ): array {
@@ -192,6 +209,20 @@ class DSG_Admin {
         $safe['smoke_mask_bottom'] = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_bottom'] ?? 0.8 ) ) );
         $safe['smoke_mask_mid']    = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_mid'] ?? 0.4 ) ) );
         $safe['smoke_mask_top']    = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_top'] ?? 0.1 ) ) );
+
+        $safe['danmaku_enabled']      = ! empty( $input['danmaku_enabled'] );
+        $safe['danmaku_interval']     = max( 1000, min( 30000, (int) ( $input['danmaku_interval'] ?? 3000 ) ) );
+        $safe['danmaku_min_size']     = max( 0.5, min( 5.0, (float) ( $input['danmaku_min_size'] ?? 1.2 ) ) );
+        $safe['danmaku_max_size']     = max( 0.5, min( 5.0, (float) ( $input['danmaku_max_size'] ?? 3.0 ) ) );
+        $safe['danmaku_colors']       = sanitize_text_field( $input['danmaku_colors'] ?? 'rgba(255,255,255,0.5),rgba(255,255,255,0.3),rgba(200,200,255,0.4)' );
+        $safe['danmaku_opacity_min']  = max( 0.02, min( 0.8, (float) ( $input['danmaku_opacity_min'] ?? 0.15 ) ) );
+        $safe['danmaku_opacity_max']  = max( 0.02, min( 0.8, (float) ( $input['danmaku_opacity_max'] ?? 0.4 ) ) );
+        $safe['danmaku_duration_min'] = max( 3000, min( 60000, (int) ( $input['danmaku_duration_min'] ?? 8000 ) ) );
+        $safe['danmaku_duration_max'] = max( 3000, min( 60000, (int) ( $input['danmaku_duration_max'] ?? 15000 ) ) );
+        $safe['danmaku_fade_in']      = max( 200, min( 5000, (int) ( $input['danmaku_fade_in'] ?? 1500 ) ) );
+        $safe['danmaku_fade_out']     = max( 200, min( 5000, (int) ( $input['danmaku_fade_out'] ?? 2000 ) ) );
+        $safe['danmaku_max_count']    = max( 1, min( 30, (int) ( $input['danmaku_max_count'] ?? 6 ) ) );
+        $safe['danmaku_drift_range']  = max( 10, min( 300, (int) ( $input['danmaku_drift_range'] ?? 60 ) ) );
 
         return $safe;
     }
@@ -342,6 +373,99 @@ class DSG_Admin {
             esc_attr( self::opt( 'smoke_mask_top', 0.1 ) )
         );
         echo '<p class="description">' . esc_html__( 'block 顶部区域的烟雾可见度比例，设为 0 则烟雾到顶部完全消失。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_enabled(): void {
+        printf(
+            '<label><input type="checkbox" name="dsg_settings[danmaku_enabled]" value="1" %s /> %s</label>',
+            checked( self::opt( 'danmaku_enabled' ), true, false ),
+            esc_html__( '在网页背景中显示浮动文字弹幕（文本来源于生成记录中已保存的输出）', 'deepseek-generator' )
+        );
+        echo '<p class="description">' . esc_html__( '弹幕将以半透明文字出现在页面背景层（z-index:0），不阻挡用户交互。若内容被遮挡，请确保主题主要内容区域设置了 position:relative;z-index:1。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_interval(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_interval]" value="%s" min="1000" max="30000" step="500" class="small-text" />',
+            esc_attr( self::opt( 'danmaku_interval', 3000 ) )
+        );
+        echo '<p class="description">' . esc_html__( '每隔多少毫秒生成一条新弹幕。值越小弹幕越密集。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_size(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_min_size]" value="%s" min="0.5" max="5.0" step="0.2" class="small-text" style="width:80px;" />',
+            esc_attr( self::opt( 'danmaku_min_size', 1.2 ) )
+        );
+        echo ' — ';
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_max_size]" value="%s" min="0.5" max="5.0" step="0.2" class="small-text" style="width:80px;" /> rem',
+            esc_attr( self::opt( 'danmaku_max_size', 3.0 ) )
+        );
+        echo '<p class="description">' . esc_html__( '每条弹幕的字号在此范围内随机。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_colors(): void {
+        printf(
+            '<textarea name="dsg_settings[danmaku_colors]" rows="3" class="large-text">%s</textarea>',
+            esc_textarea( self::opt( 'danmaku_colors', 'rgba(255,255,255,0.5),rgba(255,255,255,0.3),rgba(200,200,255,0.4),rgba(255,220,200,0.35)' ) )
+        );
+        echo '<p class="description">' . esc_html__( '逗号分隔的 CSS 颜色值，每条弹幕随机选取。支持 rgba() 半透明色、#hex、渐变色如 linear-gradient(45deg, red, blue)。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_opacity(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_opacity_min]" value="%s" min="0.02" max="0.8" step="0.05" class="small-text" style="width:80px;" />',
+            esc_attr( self::opt( 'danmaku_opacity_min', 0.15 ) )
+        );
+        echo ' — ';
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_opacity_max]" value="%s" min="0.02" max="0.8" step="0.05" class="small-text" style="width:80px;" />',
+            esc_attr( self::opt( 'danmaku_opacity_max', 0.4 ) )
+        );
+        echo '<p class="description">' . esc_html__( '每条弹幕的整体不透明度在此范围内随机。注意 rgba() 颜色本身也含透明度，最终 = 颜色alpha × 此处opacity。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_duration(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_duration_min]" value="%s" min="3000" max="60000" step="1000" class="small-text" style="width:80px;" />',
+            esc_attr( self::opt( 'danmaku_duration_min', 8000 ) )
+        );
+        echo ' — ';
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_duration_max]" value="%s" min="3000" max="60000" step="1000" class="small-text" style="width:80px;" /> ms',
+            esc_attr( self::opt( 'danmaku_duration_max', 15000 ) )
+        );
+        echo '<p class="description">' . esc_html__( '弹幕从出现到消失的总时长（不含渐显渐隐时间）。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_fade(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_fade_in]" value="%s" min="200" max="5000" step="100" class="small-text" style="width:80px;" />',
+            esc_attr( self::opt( 'danmaku_fade_in', 1500 ) )
+        );
+        echo ' / ';
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_fade_out]" value="%s" min="200" max="5000" step="100" class="small-text" style="width:80px;" /> ms',
+            esc_attr( self::opt( 'danmaku_fade_out', 2000 ) )
+        );
+        echo '<p class="description">' . esc_html__( '渐显时长 / 渐隐时长。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_max_count(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_max_count]" value="%s" min="1" max="30" step="1" class="small-text" />',
+            esc_attr( self::opt( 'danmaku_max_count', 6 ) )
+        );
+        echo '<p class="description">' . esc_html__( '同一时间屏幕上允许显示的弹幕最大数量。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_danmaku_drift_range(): void {
+        printf(
+            '<input type="number" name="dsg_settings[danmaku_drift_range]" value="%s" min="10" max="300" step="10" class="small-text" />',
+            esc_attr( self::opt( 'danmaku_drift_range', 60 ) )
+        );
+        echo '<p class="description">' . esc_html__( '弹幕随机水平/垂直飘移的最大像素范围。', 'deepseek-generator' ) . '</p>';
     }
 
     public static function render_settings_page(): void {

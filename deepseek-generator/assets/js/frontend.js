@@ -5,6 +5,7 @@
         var generators = document.querySelectorAll( '.dsg-generator' );
         generators.forEach( initGenerator );
         generators.forEach( initSmoke );
+        initDanmaku();
     } );
 
     function initGenerator( container ) {
@@ -637,6 +638,171 @@
         }
         var num = parseInt( hex, 16 );
         return { r: ( num >> 16 ) & 255, g: ( num >> 8 ) & 255, b: num & 255 };
+    }
+
+    /* ── Danmaku Background Text ── */
+
+    function initDanmaku() {
+        if ( ! dsgConfig || ! dsgConfig.danmaku || ! dsgConfig.danmaku.config || ! dsgConfig.danmaku.config.enabled ) {
+            return;
+        }
+
+        var config    = dsgConfig.danmaku.config;
+        var sentences = dsgConfig.danmaku.sentences;
+
+        if ( ! sentences || sentences.length === 0 ) return;
+
+        var activeDanmaku = [];
+        var isPageVisible = true;
+        var spawnTimer     = null;
+        var tickId         = null;
+
+        document.addEventListener( 'visibilitychange', function () {
+            isPageVisible = ! document.hidden;
+        } );
+
+        function randomInt( min, max ) {
+            return Math.floor( Math.random() * ( max - min + 1 ) ) + min;
+        }
+
+        function randomFloat( min, max ) {
+            return Math.random() * ( max - min ) + min;
+        }
+
+        function pickRandom( arr ) {
+            return arr[ Math.floor( Math.random() * arr.length ) ];
+        }
+
+        function isGradient( colorStr ) {
+            var s = colorStr.trim();
+            return /^(linear|radial|conic)-gradient|repeating-/.test( s );
+        }
+
+        function spawn() {
+            if ( ! isPageVisible ) return;
+            if ( activeDanmaku.length >= config.max_count ) return;
+
+            var text = pickRandom( sentences );
+            var span = document.createElement( 'span' );
+            span.className = 'dsg-danmaku-text';
+            span.textContent = text;
+
+            var size      = randomFloat( config.min_size, config.max_size );
+            size           = Math.round( size * 100 ) / 100;
+            var opacity   = randomFloat( config.opacity_min, config.opacity_max );
+            opacity        = Math.round( opacity * 1000 ) / 1000;
+            var color     = pickRandom( config.colors );
+            var duration  = randomInt( config.duration_min, config.duration_max );
+            var fadeIn    = config.fade_in;
+            var fadeOut   = config.fade_out;
+
+            var vw = window.innerWidth;
+            var vh = window.innerHeight;
+
+            var x = randomFloat( vw * 0.03, vw * 0.85 );
+            var y = randomFloat( vh * 0.05, vh * 0.85 );
+
+            var driftRange = config.drift_range;
+            var startX     = x;
+            var startY     = y;
+            var driftX     = randomFloat( -driftRange, driftRange );
+            var driftY     = randomFloat( -driftRange * 0.6, driftRange * 0.3 );
+            var driftPeriod = duration;
+
+            span.style.fontSize = size + 'rem';
+            span.style.left     = x + 'px';
+            span.style.top      = y + 'px';
+            span.style.transitionDuration = fadeIn + 'ms';
+
+            if ( isGradient( color ) ) {
+                span.className += ' dsg-danmaku-gradient';
+                span.style.backgroundImage = color;
+            } else {
+                span.style.color = color;
+            }
+
+            document.body.appendChild( span );
+
+            var state = {
+                el:          span,
+                x:           x,
+                y:           y,
+                startX:      startX,
+                startY:      startY,
+                driftX:      driftX,
+                driftY:      driftY,
+                driftPeriod: driftPeriod,
+                opacity:     opacity,
+                duration:    duration,
+                fadeIn:      fadeIn,
+                fadeOut:     fadeOut,
+                startTime:   performance.now(),
+                phase:       'fadeIn'
+            };
+
+            activeDanmaku.push( state );
+
+            requestAnimationFrame( function () {
+                span.style.opacity = opacity;
+            } );
+
+            setTimeout( function () {
+                state.phase = 'drift';
+            }, fadeIn );
+
+            setTimeout( function () {
+                state.phase = 'fadeOut';
+                span.style.transitionDuration = fadeOut + 'ms';
+                span.style.opacity = '0';
+            }, fadeIn + duration );
+
+            setTimeout( function () {
+                if ( span.parentNode ) span.parentNode.removeChild( span );
+                var idx = activeDanmaku.indexOf( state );
+                if ( idx > -1 ) activeDanmaku.splice( idx, 1 );
+            }, fadeIn + duration + fadeOut + 100 );
+
+            if ( ! tickId ) {
+                tickId = requestAnimationFrame( tick );
+            }
+        }
+
+        function tick( timestamp ) {
+            var stillAlive = false;
+
+            for ( var i = 0; i < activeDanmaku.length; i++ ) {
+                var s = activeDanmaku[ i ];
+                if ( s.phase === 'fadeOut' ) {
+                    stillAlive = true;
+                    continue;
+                }
+                stillAlive = true;
+
+                var elapsed = timestamp - s.startTime - s.fadeIn;
+                if ( elapsed < 0 ) continue;
+
+                var t = Math.min( elapsed / s.driftPeriod, 1 );
+                var ease = t < 0.5 ? 2 * t * t : -1 + ( 4 - 2 * t ) * t;
+
+                var dx = s.driftX * ease;
+                var dy = s.driftY * ease;
+
+                s.x = s.startX + dx;
+                s.y = s.startY + dy;
+
+                s.el.style.left = s.x + 'px';
+                s.el.style.top  = s.y + 'px';
+            }
+
+            if ( stillAlive ) {
+                tickId = requestAnimationFrame( tick );
+            } else {
+                tickId = null;
+            }
+        }
+
+        spawnTimer = setInterval( spawn, config.interval );
+        spawn();
     }
 
 } )();

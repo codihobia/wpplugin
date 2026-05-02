@@ -59,6 +59,19 @@ function dsg_activate() {
             'smoke_mask_bottom' => 0.8,
             'smoke_mask_mid'    => 0.4,
             'smoke_mask_top'    => 0.1,
+            'danmaku_enabled'      => false,
+            'danmaku_interval'     => 3000,
+            'danmaku_min_size'     => 1.2,
+            'danmaku_max_size'     => 3.0,
+            'danmaku_colors'       => 'rgba(255,255,255,0.5),rgba(255,255,255,0.3),rgba(200,200,255,0.4),rgba(255,220,200,0.35)',
+            'danmaku_opacity_min'  => 0.15,
+            'danmaku_opacity_max'  => 0.4,
+            'danmaku_duration_min' => 8000,
+            'danmaku_duration_max' => 15000,
+            'danmaku_fade_in'      => 1500,
+            'danmaku_fade_out'     => 2000,
+            'danmaku_max_count'    => 6,
+            'danmaku_drift_range'  => 60,
         ] );
     }
 }

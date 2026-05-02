@@ -42,12 +42,22 @@ class DSG_Shortcode {
         );
 
         $smoke_settings = self::get_smoke_config();
+        $danmaku_config  = self::get_danmaku_config();
+        $danmaku_sentences = [];
+
+        if ( $danmaku_config['enabled'] ) {
+            $danmaku_sentences = self::get_danmaku_sentences();
+        }
 
         wp_localize_script( 'dsg-frontend', 'dsgConfig', [
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-            'nonce'   => wp_create_nonce( 'dsg_nonce' ),
-            'smoke'   => $smoke_settings,
-            'i18n'    => [
+            'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'dsg_nonce' ),
+            'smoke'    => $smoke_settings,
+            'danmaku'  => [
+                'config'    => $danmaku_config,
+                'sentences' => $danmaku_sentences,
+            ],
+            'i18n'     => [
                 'generate'    => __( '生成', 'deepseek-generator' ),
                 'generating'  => __( '生成中...', 'deepseek-generator' ),
                 'copy'        => __( '复制', 'deepseek-generator' ),
@@ -106,6 +116,70 @@ class DSG_Shortcode {
             'mask_mid'    => max( 0.0, min( 1.0, (float) ( $settings['smoke_mask_mid'] ?? 0.4 ) ) ),
             'mask_top'    => max( 0.0, min( 1.0, (float) ( $settings['smoke_mask_top'] ?? 0.1 ) ) ),
         ];
+    }
+
+    private static function get_danmaku_config(): array {
+        $settings = get_option( 'dsg_settings', [] );
+        $enabled = ! empty( $settings['danmaku_enabled'] );
+        return [
+            'enabled'      => $enabled,
+            'interval'     => max( 1000, min( 30000, (int) ( $settings['danmaku_interval'] ?? 3000 ) ) ),
+            'min_size'     => max( 0.5, min( 5.0, (float) ( $settings['danmaku_min_size'] ?? 1.2 ) ) ),
+            'max_size'     => max( 0.5, min( 5.0, (float) ( $settings['danmaku_max_size'] ?? 3.0 ) ) ),
+            'colors'       => array_filter( array_map( 'trim', explode( ',', $settings['danmaku_colors'] ?? 'rgba(255,255,255,0.5),rgba(255,255,255,0.3),rgba(200,200,255,0.4),rgba(255,220,200,0.35)' ) ) ),
+            'opacity_min'  => max( 0.02, min( 0.8, (float) ( $settings['danmaku_opacity_min'] ?? 0.15 ) ) ),
+            'opacity_max'  => max( 0.02, min( 0.8, (float) ( $settings['danmaku_opacity_max'] ?? 0.4 ) ) ),
+            'duration_min' => max( 3000, min( 60000, (int) ( $settings['danmaku_duration_min'] ?? 8000 ) ) ),
+            'duration_max' => max( 3000, min( 60000, (int) ( $settings['danmaku_duration_max'] ?? 15000 ) ) ),
+            'fade_in'      => max( 200, min( 5000, (int) ( $settings['danmaku_fade_in'] ?? 1500 ) ) ),
+            'fade_out'     => max( 200, min( 5000, (int) ( $settings['danmaku_fade_out'] ?? 2000 ) ) ),
+            'max_count'    => max( 1, min( 30, (int) ( $settings['danmaku_max_count'] ?? 6 ) ) ),
+            'drift_range'  => max( 10, min( 300, (int) ( $settings['danmaku_drift_range'] ?? 60 ) ) ),
+        ];
+    }
+
+    private static function get_danmaku_sentences(): array {
+        $sentences = get_transient( 'dsg_danmaku_sentences' );
+        if ( $sentences !== false && is_array( $sentences ) ) {
+            return $sentences;
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'dsg_outputs';
+        $rows = $wpdb->get_col( $wpdb->prepare(
+            "SELECT output FROM {$table} WHERE status = %s",
+            'published'
+        ) );
+
+        if ( empty( $rows ) ) {
+            $sentences = [ '欢迎使用 DeepSeek AI Generator' ];
+            set_transient( 'dsg_danmaku_sentences', $sentences, HOUR_IN_SECONDS );
+            return $sentences;
+        }
+
+        $all_text = implode( "\n", $rows );
+        $all_text = wp_strip_all_tags( $all_text );
+        $all_text = html_entity_decode( $all_text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+        $parts = preg_split( '/[。！？?!;；\n]+/u', $all_text, -1, PREG_SPLIT_NO_EMPTY );
+
+        $sentences = [];
+        foreach ( $parts as $part ) {
+            $part = trim( $part );
+            $len  = mb_strlen( $part );
+            if ( $len >= 5 && $len <= 200 ) {
+                $sentences[] = $part;
+            }
+        }
+
+        if ( empty( $sentences ) ) {
+            $sentences = [ '欢迎使用 DeepSeek AI Generator' ];
+        }
+
+        $sentences = array_values( $sentences );
+        set_transient( 'dsg_danmaku_sentences', $sentences, HOUR_IN_SECONDS );
+
+        return $sentences;
     }
 
     public static function build_html( int $template_id, string $title, string $placeholder, string $button_text, string $output_example, string $theme, bool $allow_save = false, bool $show_history = false ): string {

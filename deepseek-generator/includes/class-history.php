@@ -45,12 +45,17 @@ class DSG_History {
             'status'      => 'published',
             'created_at'  => current_time( 'mysql' ),
         ], [ '%d', '%d', '%s', '%s', '%s', '%s' ] );
+        delete_transient( 'dsg_danmaku_sentences' );
         return (int) $wpdb->insert_id;
     }
 
     public static function delete( int $id ): bool {
         global $wpdb;
-        return (bool) $wpdb->delete( self::table_name(), [ 'id' => $id ], [ '%d' ] );
+        $result = (bool) $wpdb->delete( self::table_name(), [ 'id' => $id ], [ '%d' ] );
+        if ( $result ) {
+            delete_transient( 'dsg_danmaku_sentences' );
+        }
+        return $result;
     }
 
     public static function bulk_delete( array $ids ): int {
@@ -59,7 +64,11 @@ class DSG_History {
             return 0;
         }
         $ids_placeholder = implode( ',', array_map( 'intval', $ids ) );
-        return (int) $wpdb->query( "DELETE FROM " . self::table_name() . " WHERE id IN ({$ids_placeholder})" );
+        $count = (int) $wpdb->query( "DELETE FROM " . self::table_name() . " WHERE id IN ({$ids_placeholder})" );
+        if ( $count > 0 ) {
+            delete_transient( 'dsg_danmaku_sentences' );
+        }
+        return $count;
     }
 
     public static function update_status( int $id, string $status ): bool {
