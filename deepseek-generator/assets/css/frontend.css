@@ -36,8 +36,18 @@
     height: 100%;
     pointer-events: none;
     z-index: 0;
-    mask-image: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0) 100%);
-    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0) 100%);
+    mask-image: linear-gradient(
+        to top,
+        rgba(0,0,0,var(--dsg-smoke-mask-bottom, 0.8)) 0%,
+        rgba(0,0,0,var(--dsg-smoke-mask-mid, 0.4)) 50%,
+        rgba(0,0,0,var(--dsg-smoke-mask-top, 0.1)) 100%
+    );
+    -webkit-mask-image: linear-gradient(
+        to top,
+        rgba(0,0,0,var(--dsg-smoke-mask-bottom, 0.8)) 0%,
+        rgba(0,0,0,var(--dsg-smoke-mask-mid, 0.4)) 50%,
+        rgba(0,0,0,var(--dsg-smoke-mask-top, 0.1)) 100%
+    );
 }
 
 /* Ensure content stays above canvas */

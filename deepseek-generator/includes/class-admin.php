@@ -158,6 +158,9 @@ class DSG_Admin {
         add_settings_field( 'dsg_smoke_opacity', __( '透明度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_opacity' ], 'dsg-settings', 'dsg_smoke_section' );
         add_settings_field( 'dsg_smoke_breathe', __( '脉动强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_breathe' ], 'dsg-settings', 'dsg_smoke_section' );
         add_settings_field( 'dsg_smoke_color', __( '烟雾颜色', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_color' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_mask_bottom', __( '底部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_bottom' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_mask_mid', __( '中部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_mid' ], 'dsg-settings', 'dsg_smoke_section' );
+        add_settings_field( 'dsg_smoke_mask_top', __( '顶部 mask 强度', 'deepseek-generator' ), [ __CLASS__, 'field_smoke_mask_top' ], 'dsg-settings', 'dsg_smoke_section' );
     }
 
     public static function sanitize_settings( $input ): array {
@@ -186,6 +189,9 @@ class DSG_Admin {
         $safe['smoke_color']     = sanitize_hex_color( $input['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5';
         $safe['smoke_spread']    = max( 0.3, min( 3.0, (float) ( $input['smoke_spread'] ?? 1.0 ) ) );
         $safe['smoke_breathe']   = max( 0.0, min( 1.0, (float) ( $input['smoke_breathe'] ?? 0.5 ) ) );
+        $safe['smoke_mask_bottom'] = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_bottom'] ?? 0.8 ) ) );
+        $safe['smoke_mask_mid']    = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_mid'] ?? 0.4 ) ) );
+        $safe['smoke_mask_top']    = max( 0.0, min( 1.0, (float) ( $input['smoke_mask_top'] ?? 0.1 ) ) );
 
         return $safe;
     }
@@ -312,6 +318,30 @@ class DSG_Admin {
             '<input type="color" name="dsg_settings[smoke_color]" value="%s" />',
             esc_attr( self::opt( 'smoke_color', '#4f46e5' ) )
         );
+    }
+
+    public static function field_smoke_mask_bottom(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_mask_bottom]" value="%s" min="0" max="1" step="0.05" class="small-text" />',
+            esc_attr( self::opt( 'smoke_mask_bottom', 0.8 ) )
+        );
+        echo '<p class="description">' . esc_html__( 'block 底部区域的烟雾可见度比例，1.0 完全显示，0 完全隐藏。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_mask_mid(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_mask_mid]" value="%s" min="0" max="1" step="0.05" class="small-text" />',
+            esc_attr( self::opt( 'smoke_mask_mid', 0.4 ) )
+        );
+        echo '<p class="description">' . esc_html__( 'block 中部区域的烟雾可见度比例，值越大烟雾延伸越高。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_smoke_mask_top(): void {
+        printf(
+            '<input type="number" name="dsg_settings[smoke_mask_top]" value="%s" min="0" max="1" step="0.05" class="small-text" />',
+            esc_attr( self::opt( 'smoke_mask_top', 0.1 ) )
+        );
+        echo '<p class="description">' . esc_html__( 'block 顶部区域的烟雾可见度比例，设为 0 则烟雾到顶部完全消失。', 'deepseek-generator' ) . '</p>';
     }
 
     public static function render_settings_page(): void {

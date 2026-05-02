@@ -95,13 +95,16 @@ class DSG_Shortcode {
         $settings = get_option( 'dsg_settings', [] );
         $enabled = ! empty( $settings['smoke_enabled'] );
         return [
-            'enabled'   => $enabled,
-            'particles' => max( 10, min( 300, (int) ( $settings['smoke_particles'] ?? 80 ) ) ),
-            'speed'     => max( 0.1, min( 3.0, (float) ( $settings['smoke_speed'] ?? 0.6 ) ) ),
-            'opacity'   => max( 0.05, min( 0.8, (float) ( $settings['smoke_opacity'] ?? 0.3 ) ) ),
-            'color'     => sanitize_hex_color( $settings['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5',
-            'spread'    => max( 0.3, min( 3.0, (float) ( $settings['smoke_spread'] ?? 1.0 ) ) ),
-            'breathe'   => max( 0.0, min( 1.0, (float) ( $settings['smoke_breathe'] ?? 0.5 ) ) ),
+            'enabled'     => $enabled,
+            'particles'   => max( 10, min( 300, (int) ( $settings['smoke_particles'] ?? 80 ) ) ),
+            'speed'       => max( 0.1, min( 3.0, (float) ( $settings['smoke_speed'] ?? 0.6 ) ) ),
+            'opacity'     => max( 0.05, min( 0.8, (float) ( $settings['smoke_opacity'] ?? 0.3 ) ) ),
+            'color'       => sanitize_hex_color( $settings['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5',
+            'spread'      => max( 0.3, min( 3.0, (float) ( $settings['smoke_spread'] ?? 1.0 ) ) ),
+            'breathe'     => max( 0.0, min( 1.0, (float) ( $settings['smoke_breathe'] ?? 0.5 ) ) ),
+            'mask_bottom' => max( 0.0, min( 1.0, (float) ( $settings['smoke_mask_bottom'] ?? 0.8 ) ) ),
+            'mask_mid'    => max( 0.0, min( 1.0, (float) ( $settings['smoke_mask_mid'] ?? 0.4 ) ) ),
+            'mask_top'    => max( 0.0, min( 1.0, (float) ( $settings['smoke_mask_top'] ?? 0.1 ) ) ),
         ];
     }
 
@@ -110,10 +113,21 @@ class DSG_Shortcode {
 
         $smoke_config = self::get_smoke_config();
 
+        $smoke_style = '';
+        if ( $smoke_config['enabled'] ) {
+            $smoke_style = sprintf(
+                '--dsg-smoke-mask-bottom:%.2f;--dsg-smoke-mask-mid:%.2f;--dsg-smoke-mask-top:%.2f;',
+                $smoke_config['mask_bottom'],
+                $smoke_config['mask_mid'],
+                $smoke_config['mask_top']
+            );
+        }
+
         ob_start();
         ?>
         <div id="<?php echo esc_attr( $uid ); ?>"
              class="dsg-generator dsg-theme-<?php echo esc_attr( $theme ); ?>"
+             style="<?php echo esc_attr( $smoke_style ); ?>"
              data-template-id="<?php echo esc_attr( $template_id ); ?>"
              data-saveable="<?php echo $allow_save ? '1' : '0'; ?>"
              data-show-history="<?php echo $show_history ? '1' : '0'; ?>">

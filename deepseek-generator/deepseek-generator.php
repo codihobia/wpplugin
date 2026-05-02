@@ -56,6 +56,9 @@ function dsg_activate() {
             'smoke_color'     => '#4f46e5',
             'smoke_spread'    => 1.0,
             'smoke_breathe'   => 0.5,
+            'smoke_mask_bottom' => 0.8,
+            'smoke_mask_mid'    => 0.4,
+            'smoke_mask_top'    => 0.1,
         ] );
     }
 }
