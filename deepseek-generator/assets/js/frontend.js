@@ -428,8 +428,8 @@
                 opacity: 0,
                 targetOpacity: 0.15 + Math.random() * 0.6,
                 life: 0,
-                maxLife: 200 + Math.random() * 400,
-                fadeInDuration: 40 + Math.random() * 80,
+                maxLife: 3000 + Math.random() * 5000,
+                fadeInDuration: 200 + Math.random() * 400,
             };
         }
 
@@ -445,13 +445,13 @@
                 var p = particles[ i ];
                 p.life += dt;
 
-                p.y -= p.speed * dt * 0.06;
+                p.y -= p.speed * dt * 0.28;
                 p.x += Math.sin( p.life * p.wobbleFreq + p.wobbleOffset ) * p.wobbleAmp * dt * 0.03 * spreadFactor;
 
                 if ( p.life < p.fadeInDuration ) {
                     p.opacity = p.targetOpacity * ( p.life / p.fadeInDuration );
-                } else if ( p.life > p.maxLife - 80 ) {
-                    var fadeOut = ( p.maxLife - p.life ) / 80;
+                } else if ( p.life > p.maxLife - 400 ) {
+                    var fadeOut = ( p.maxLife - p.life ) / 400;
                     p.opacity = p.targetOpacity * Math.max( 0, fadeOut );
                 } else {
                     p.opacity = p.targetOpacity;
