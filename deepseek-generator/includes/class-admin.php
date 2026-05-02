@@ -183,7 +183,7 @@ class DSG_Admin {
         $safe['rate_limit']   = max( 0, (int) ( $input['rate_limit'] ?? 10 ) );
 
         $safe['smoke_enabled']   = ! empty( $input['smoke_enabled'] );
-        $safe['smoke_particles'] = max( 10, min( 300, (int) ( $input['smoke_particles'] ?? 80 ) ) );
+        $safe['smoke_particles'] = max( 10, min( 3000, (int) ( $input['smoke_particles'] ?? 800 ) ) );
         $safe['smoke_speed']     = max( 0.1, min( 3.0, (float) ( $input['smoke_speed'] ?? 0.6 ) ) );
         $safe['smoke_opacity']   = max( 0.05, min( 0.8, (float) ( $input['smoke_opacity'] ?? 0.3 ) ) );
         $safe['smoke_color']     = sanitize_hex_color( $input['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5';
@@ -275,7 +275,7 @@ class DSG_Admin {
 
     public static function field_smoke_particles(): void {
         printf(
-            '<input type="number" name="dsg_settings[smoke_particles]" value="%s" min="10" max="300" step="10" class="small-text" />',
+            '<input type="number" name="dsg_settings[smoke_particles]" value="%s" min="10" max="3000" step="10" class="small-text" />',
             esc_attr( self::opt( 'smoke_particles', 80 ) )
         );
         echo '<p class="description">' . esc_html__( '越多越厚实，但对性能影响更大。推荐 60-120。', 'deepseek-generator' ) . '</p>';

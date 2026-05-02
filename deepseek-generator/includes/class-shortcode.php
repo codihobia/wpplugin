@@ -96,7 +96,7 @@ class DSG_Shortcode {
         $enabled = ! empty( $settings['smoke_enabled'] );
         return [
             'enabled'     => $enabled,
-            'particles'   => max( 10, min( 300, (int) ( $settings['smoke_particles'] ?? 80 ) ) ),
+            'particles'   => max( 10, min( 3000, (int) ( $settings['smoke_particles'] ?? 800 ) ) ),
             'speed'       => max( 0.1, min( 3.0, (float) ( $settings['smoke_speed'] ?? 0.6 ) ) ),
             'opacity'     => max( 0.05, min( 0.8, (float) ( $settings['smoke_opacity'] ?? 0.3 ) ) ),
             'color'       => sanitize_hex_color( $settings['smoke_color'] ?? '#4f46e5' ) ?: '#4f46e5',
