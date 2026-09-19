@@ -8,17 +8,45 @@ class DSG_API {
 
     private static function get_settings(): array {
         $defaults = [
-            'api_key'      => '',
-            'base_url'     => 'https://api.deepseek.com',
-            'model'        => 'deepseek-v4-pro',
-            'temperature'  => 1,
-            'max_tokens'   => 2048,
-            'top_p'        => 1,
-            'allow_guests' => false,
-            'rate_limit'   => 10,
+            'api_key'          => '',
+            'base_url'         => 'https://api.deepseek.com',
+            'model'            => 'deepseek-flash',
+            'thinking_enabled' => false,
+            'reasoning_effort' => 'high',
+            'temperature'      => 1,
+            'max_tokens'       => 2048,
+            'top_p'            => 1,
+            'allow_guests'     => false,
+            'rate_limit'       => 10,
         ];
         $saved = get_option( 'dsg_settings', [] );
-        return wp_parse_args( $saved, $defaults );
+        if ( ! is_array( $saved ) ) {
+            $saved = [];
+        }
+        $settings = wp_parse_args( $saved, $defaults );
+        $settings['model'] = self::normalize_model( (string) $settings['model'] );
+        return $settings;
+    }
+
+    /**
+     * Map model names onto the models offered by the current DeepSeek API.
+     *
+     * Current models: deepseek-flash (V4.1-Flash) and deepseek-v4-pro.
+     * Legacy names (deepseek-v4-flash, deepseek-chat, deepseek-reasoner, …)
+     * are accepted by the API but retired, so they are normalized here.
+     */
+    public static function normalize_model( string $model ): string {
+        $legacy = [
+            'deepseek-chat'                => 'deepseek-flash',
+            'deepseek-reasoner'            => 'deepseek-flash',
+            'deepseek-v4-flash'            => 'deepseek-flash',
+            'deepseek-v4-flash-vision-exp' => 'deepseek-flash',
+        ];
+        $model = trim( $model );
+        if ( isset( $legacy[ $model ] ) ) {
+            return $legacy[ $model ];
+        }
+        return in_array( $model, [ 'deepseek-flash', 'deepseek-v4-pro' ], true ) ? $model : 'deepseek-flash';
     }
 
     private static function decrypt_api_key( string $encrypted ): string {
@@ -56,22 +84,12 @@ class DSG_API {
             return [ 'error' => __( 'API Key 未配置。', 'deepseek-generator' ) ];
         }
 
-        $body = [
-            'model'       => $options['model'] ?? $settings['model'],
-            'temperature' => (float) ( $options['temperature'] ?? $settings['temperature'] ),
-            'max_tokens'  => (int) ( $options['max_tokens'] ?? $settings['max_tokens'] ),
-            'top_p'       => (float) ( $options['top_p'] ?? $settings['top_p'] ),
-            'stream'      => false,
-            'messages'    => [
-                [ 'role' => 'system', 'content' => $system_prompt ],
-                [ 'role' => 'user',   'content' => $user_message ],
-            ],
-        ];
+        $body = self::build_request_body( $settings, $system_prompt, $user_message, $options, false );
 
         $response = wp_remote_post(
             rtrim( $settings['base_url'], '/' ) . '/chat/completions',
             [
-                'timeout' => 120,
+                'timeout' => 180,
                 'headers' => [
                     'Content-Type'  => 'application/json',
                     'Authorization' => 'Bearer ' . $api_key,
@@ -92,10 +110,49 @@ class DSG_API {
             return [ 'error' => $msg ];
         }
 
+        $message = $data['choices'][0]['message'] ?? [];
+
         return [
-            'content' => $data['choices'][0]['message']['content'] ?? '',
-            'usage'   => $data['usage'] ?? [],
+            'content'   => $message['content'] ?? '',
+            'reasoning' => $message['reasoning_content'] ?? '',
+            'usage'     => $data['usage'] ?? [],
         ];
+    }
+
+    /**
+     * Build the request body for the current DeepSeek chat-completions API.
+     *
+     * Thinking mode is now a request-level toggle: when enabled, temperature is
+     * ignored by the API and top_p is only honored in the 0.95–1.0 range, so
+     * those parameters are only sent when thinking is disabled.
+     */
+    private static function build_request_body( array $settings, string $system_prompt, string $user_message, array $options, bool $stream ): array {
+        $thinking = ! empty( $options['thinking_enabled'] ?? $settings['thinking_enabled'] );
+
+        $body = [
+            'model'      => self::normalize_model( (string) ( $options['model'] ?? $settings['model'] ) ),
+            'max_tokens' => (int) ( $options['max_tokens'] ?? $settings['max_tokens'] ),
+            'stream'     => $stream,
+            'messages'   => [
+                [ 'role' => 'system', 'content' => $system_prompt ],
+                [ 'role' => 'user',   'content' => $user_message ],
+            ],
+        ];
+
+        if ( $thinking ) {
+            $body['thinking']        = [ 'type' => 'enabled' ];
+            $body['reasoning_effort'] = self::sanitize_effort( (string) ( $options['reasoning_effort'] ?? $settings['reasoning_effort'] ) );
+        } else {
+            $body['thinking']        = [ 'type' => 'disabled' ];
+            $body['temperature']     = (float) ( $options['temperature'] ?? $settings['temperature'] );
+            $body['top_p']           = (float) ( $options['top_p'] ?? $settings['top_p'] );
+        }
+
+        return $body;
+    }
+
+    private static function sanitize_effort( string $effort ): string {
+        return in_array( $effort, [ 'low', 'high', 'max' ], true ) ? $effort : 'high';
     }
 
     public static function chat_completion_stream( string $system_prompt, string $user_message, array $options = [] ): void {
@@ -107,19 +164,14 @@ class DSG_API {
             return;
         }
 
-        $body = [
-            'model'       => $options['model'] ?? $settings['model'],
-            'temperature' => (float) ( $options['temperature'] ?? $settings['temperature'] ),
-            'max_tokens'  => (int) ( $options['max_tokens'] ?? $settings['max_tokens'] ),
-            'top_p'       => (float) ( $options['top_p'] ?? $settings['top_p'] ),
-            'stream'      => true,
-            'messages'    => [
-                [ 'role' => 'system', 'content' => $system_prompt ],
-                [ 'role' => 'user',   'content' => $user_message ],
-            ],
-        ];
+        $body = self::build_request_body( $settings, $system_prompt, $user_message, $options, true );
+        $url  = rtrim( $settings['base_url'], '/' ) . '/chat/completions';
 
-        $url = rtrim( $settings['base_url'], '/' ) . '/chat/completions';
+        // Pending HTTP status of the upstream response: 0 until headers
+        // arrive. While unset, chunks are buffered so an error body can be
+        // turned into an SSE error event instead of being piped raw.
+        $status   = 0;
+        $buffered = '';
 
         $ch = curl_init( $url );
         curl_setopt_array( $ch, [
@@ -132,24 +184,47 @@ class DSG_API {
             CURLOPT_POSTFIELDS     => wp_json_encode( $body ),
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT        => 300,
-            CURLOPT_WRITEFUNCTION  => function ( $ch, $data ) {
-                echo $data;
-                if ( ob_get_level() ) {
-                    ob_flush();
+            CURLOPT_WRITEFUNCTION  => function ( $ch, $data ) use ( &$status, &$buffered ) {
+                if ( 0 === $status ) {
+                    $status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
                 }
-                flush();
+
+                if ( 200 === $status ) {
+                    self::stream_write( $data );
+                } else {
+                    $buffered .= $data;
+                }
+
                 return strlen( $data );
             },
         ] );
 
         curl_exec( $ch );
 
-        $err = curl_error( $ch );
+        $err    = curl_error( $ch );
+        $status = $status ?: (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+        curl_close( $ch );
+
         if ( $err ) {
             echo "data: " . wp_json_encode( [ 'error' => $err ] ) . "\n\n";
+            return;
         }
 
-        curl_close( $ch );
+        // Non-200: DeepSeek answered with a plain JSON error document. Emit
+        // it as an SSE error event with the API's own message.
+        if ( 0 !== $status && 200 !== $status ) {
+            $decoded = json_decode( $buffered, true );
+            $msg     = $decoded['error']['message'] ?? ( __( 'API 返回错误 ', 'deepseek-generator' ) . $status );
+            echo "data: " . wp_json_encode( [ 'error' => $msg ] ) . "\n\n";
+        }
+    }
+
+    private static function stream_write( string $data ): void {
+        echo $data;
+        if ( ob_get_level() ) {
+            ob_flush();
+        }
+        flush();
     }
 
     private static function check_rate_limit(): bool {

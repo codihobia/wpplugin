@@ -122,7 +122,8 @@ class DSG_Admin {
         add_settings_field( 'dsg_api_key', __( 'API Key', 'deepseek-generator' ), [ __CLASS__, 'field_api_key' ], 'dsg-settings', 'dsg_api_section' );
         add_settings_field( 'dsg_base_url', __( 'Base URL', 'deepseek-generator' ), [ __CLASS__, 'field_base_url' ], 'dsg-settings', 'dsg_api_section' );
         add_settings_field( 'dsg_model', __( '模型', 'deepseek-generator' ), [ __CLASS__, 'field_model' ], 'dsg-settings', 'dsg_api_section' );
-
+        add_settings_field( 'dsg_thinking_enabled', __( '思维模式', 'deepseek-generator' ), [ __CLASS__, 'field_thinking_enabled' ], 'dsg-settings', 'dsg_api_section' );
+        add_settings_field( 'dsg_reasoning_effort', __( '推理力度', 'deepseek-generator' ), [ __CLASS__, 'field_reasoning_effort' ], 'dsg-settings', 'dsg_api_section' );
         add_settings_section(
             'dsg_params_section',
             __( '默认参数', 'deepseek-generator' ),
@@ -191,13 +192,16 @@ class DSG_Admin {
             $safe['api_key'] = $old['api_key'] ?? '';
         }
 
-        $safe['base_url']     = esc_url_raw( $input['base_url'] ?? 'https://api.deepseek.com' );
-        $safe['model']        = sanitize_text_field( $input['model'] ?? 'deepseek-v4-pro' );
-        $safe['temperature']  = max( 0, min( 2, (float) ( $input['temperature'] ?? 1 ) ) );
-        $safe['max_tokens']   = max( 1, (int) ( $input['max_tokens'] ?? 2048 ) );
-        $safe['top_p']        = max( 0, min( 1, (float) ( $input['top_p'] ?? 1 ) ) );
-        $safe['allow_guests'] = ! empty( $input['allow_guests'] );
-        $safe['rate_limit']   = max( 0, (int) ( $input['rate_limit'] ?? 10 ) );
+        $safe['base_url']         = esc_url_raw( $input['base_url'] ?? 'https://api.deepseek.com' );
+        $safe['model']            = DSG_API::normalize_model( sanitize_text_field( $input['model'] ?? 'deepseek-flash' ) );
+        $safe['thinking_enabled'] = ! empty( $input['thinking_enabled'] );
+        $safe['reasoning_effort'] = in_array( $input['reasoning_effort'] ?? '', [ 'low', 'high', 'max' ], true ) ? $input['reasoning_effort'] : 'high';
+        $safe['temperature']      = max( 0, min( 2, (float) ( $input['temperature'] ?? 1 ) ) );
+        $safe['max_tokens']       = max( 1, (int) ( $input['max_tokens'] ?? 2048 ) );
+        $safe['top_p']            = max( 0, min( 1, (float) ( $input['top_p'] ?? 1 ) ) );
+        $safe['allow_guests']     = ! empty( $input['allow_guests'] );
+        $safe['rate_limit']       = max( 0, (int) ( $input['rate_limit'] ?? 10 ) );
+
 
         $safe['smoke_enabled']   = ! empty( $input['smoke_enabled'] );
         $safe['smoke_particles'] = max( 10, min( 3000, (int) ( $input['smoke_particles'] ?? 800 ) ) );
@@ -251,12 +255,38 @@ class DSG_Admin {
     }
 
     public static function field_model(): void {
-        $model = self::opt( 'model', 'deepseek-v4-pro' );
+        $model = DSG_API::normalize_model( (string) self::opt( 'model', 'deepseek-flash' ) );
         echo '<select name="dsg_settings[model]">';
-        foreach ( [ 'deepseek-v4-pro' => 'DeepSeek V4 Pro', 'deepseek-v4-flash' => 'DeepSeek V4 Flash' ] as $val => $label ) {
+        foreach ( [
+            'deepseek-flash' => 'DeepSeek V4.1 Flash（快速，性价比高）',
+            'deepseek-v4-pro' => 'DeepSeek V4 Pro（更强推理与写作）',
+        ] as $val => $label ) {
             printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $model, $val, false ), esc_html( $label ) );
         }
         echo '</select>';
+        echo '<p class="description">' . esc_html__( '旧模型名（deepseek-chat / deepseek-reasoner / deepseek-v4-flash）将自动映射到当前对应模型。', 'deepseek-generator' ) . '</p>';
+    }
+
+    public static function field_thinking_enabled(): void {
+        printf(
+            '<label><input type="checkbox" name="dsg_settings[thinking_enabled]" value="1" %s /> %s</label>',
+            checked( ! empty( self::opt( 'thinking_enabled' ) ), true, false ),
+            esc_html__( '启用思维模式（模型先输出思考过程再作答，质量更高但更慢）', 'deepseek-generator' )
+        );
+    }
+
+    public static function field_reasoning_effort(): void {
+        $effort = self::opt( 'reasoning_effort', 'high' );
+        echo '<select name="dsg_settings[reasoning_effort]">';
+        foreach ( [
+            'low'  => __( '低（更快）', 'deepseek-generator' ),
+            'high' => __( '高（默认）', 'deepseek-generator' ),
+            'max'  => __( '最高（最强推理）', 'deepseek-generator' ),
+        ] as $val => $label ) {
+            printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $effort, $val, false ), esc_html( (string) $label ) );
+        }
+        echo '</select>';
+        echo '<p class="description">' . esc_html__( '仅在启用思维模式时生效。', 'deepseek-generator' ) . '</p>';
     }
 
     public static function field_temperature(): void {
@@ -264,13 +294,15 @@ class DSG_Admin {
             '<input type="number" name="dsg_settings[temperature]" value="%s" min="0" max="2" step="0.1" class="small-text" />',
             esc_attr( self::opt( 'temperature', 1 ) )
         );
+        echo '<p class="description">' . esc_html__( '仅在关闭思维模式时生效（思维模式下该参数被 API 忽略）。', 'deepseek-generator' ) . '</p>';
     }
 
     public static function field_max_tokens(): void {
         printf(
-            '<input type="number" name="dsg_settings[max_tokens]" value="%s" min="1" max="131072" step="1" class="small-text" />',
+            '<input type="number" name="dsg_settings[max_tokens]" value="%s" min="1" max="393216" step="1" class="small-text" />',
             esc_attr( self::opt( 'max_tokens', 2048 ) )
         );
+        echo '<p class="description">' . esc_html__( '当前 API 最大输出 384K tokens。', 'deepseek-generator' ) . '</p>';
     }
 
     public static function field_top_p(): void {

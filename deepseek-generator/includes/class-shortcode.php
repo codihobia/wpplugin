@@ -71,7 +71,7 @@ class DSG_Shortcode {
                 'saving'      => __( '保存中...', 'deepseek-generator' ),
                 'save_fail'   => __( '保存失败。', 'deepseek-generator' ),
                 'load_more'   => __( '加载更多', 'deepseek-generator' ),
-                'no_history'  => __( '暂无记录。', 'deepseek-generator' ),
+                'reasoning'   => __( '思考过程', 'deepseek-generator' ),
                 'history'     => __( '历史生成记录', 'deepseek-generator' ),
             ],
         ] );

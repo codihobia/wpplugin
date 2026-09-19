@@ -4,9 +4,9 @@
 
 ## 功能特性
 
-- **DeepSeek API 集成** — 支持 `deepseek-v4-pro` 与 `deepseek-v4-flash` (R1) 两种模型
+- **DeepSeek API 集成** — 支持当前 `deepseek-flash` (V4.1-Flash) 与 `deepseek-v4-pro` 两种模型，支持思维模式（Thinking Mode）与推理力度控制
 - **Shortcode & Gutenberg Block** — 两种嵌入方式，适配经典编辑器和块编辑器
-- **SSE 流式输出** — 实时逐字展示生成结果，体验流畅
+- **SSE 流式输出** — 实时逐字展示生成结果；思维模式下同步展示可折叠的思考过程
 - **自定义提示词模板** — 后台管理 System Prompt、User Prompt 模板（支持 `{{user_input}}` 占位符）、输出样例
 - **模板级参数覆盖** — 每个模板可单独设置 temperature、max_tokens
 - **Markdown 渲染** — 生成结果自动渲染 Markdown（基于 marked.js）
@@ -38,11 +38,13 @@
 | 字段 | 说明 |
 |---|---|
 | API Key | DeepSeek 平台的 API Key，加密存储 |
-| Base URL | API 基础地址，默认 `https://api.deepseek.com` |
-| 模型 | `deepseek-chat` 或 `deepseek-reasoner` |
-| Temperature | 采样温度，0–2 |
-| Max Tokens | 最大生成 token 数 |
-| Top P | 核采样参数，0–1 |
+| Base URL | API 基础地址，默认 `https://api.deepseek.com`（OpenAI 格式） |
+| 模型 | `deepseek-flash`（V4.1-Flash，快速）或 `deepseek-v4-pro`（更强推理与写作）；旧模型名自动映射到当前模型 |
+| 思维模式 | 启用后模型先输出思考过程（`reasoning_content`）再作答，质量更高但更慢，前端以可折叠面板展示 |
+| 推理力度 | `low` / `high` / `max`，仅在启用思维模式时生效 |
+| Temperature | 采样温度，0–2。仅在关闭思维模式时生效（思维模式下 API 忽略此参数） |
+| Max Tokens | 最大生成 token 数，当前 API 上限 384K |
+| Top P | 核采样参数，0–1。仅在关闭思维模式时生效（思维模式下仅 0.95–1.0 区间有效） |
 | 允许未登录用户 | 是否允许访客使用生成功能 |
 | 频率限制 | 每用户/IP 每分钟最大请求次数，0 为不限制 |
 

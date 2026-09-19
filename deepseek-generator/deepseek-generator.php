@@ -3,7 +3,7 @@
  * Plugin Name: DeepSeek AI Generator
  * Plugin URI:  https://github.com/your-repo/deepseek-generator
  * Description: 调用 DeepSeek API 生成文本，支持 Shortcode 和 Gutenberg Block，可自定义提示词模板和输出样例。
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Your Name
  * Author URI:  https://your-site.com
  * License:     GPL-2.0-or-later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'DSG_VERSION', '1.0.0' );
+define( 'DSG_VERSION', '1.1.0' );
 define( 'DSG_PLUGIN_FILE', __FILE__ );
 define( 'DSG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DSG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -41,14 +41,16 @@ function dsg_activate() {
 
     if ( ! get_option( 'dsg_settings' ) ) {
         update_option( 'dsg_settings', [
-            'api_key'      => '',
-            'base_url'     => 'https://api.deepseek.com',
-            'model'        => 'deepseek-v4-pro',
-            'temperature'  => 1,
-            'max_tokens'   => 2048,
-            'top_p'        => 1,
-            'allow_guests' => false,
-            'rate_limit'   => 10,
+            'api_key'          => '',
+            'base_url'         => 'https://api.deepseek.com',
+            'model'            => 'deepseek-flash',
+            'thinking_enabled' => false,
+            'reasoning_effort' => 'high',
+            'temperature'      => 1,
+            'max_tokens'       => 2048,
+            'top_p'            => 1,
+            'allow_guests'     => false,
+            'rate_limit'       => 10,
             'smoke_enabled'  => false,
             'smoke_particles' => 80,
             'smoke_speed'     => 0.6,

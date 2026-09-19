@@ -25,7 +25,9 @@
         var historyList   = container.querySelector( '.dsg-history-list' );
         var historyMore   = container.querySelector( '.dsg-history-more' );
         var btnLoadMore   = container.querySelector( '.dsg-btn-load-more' );
-
+        var reasoningPanel = null;
+        var reasoningBody  = null;
+        var rawReasoning   = '';
         var rawContent    = '';
         var isGenerating  = false;
         var historyPage   = 1;
@@ -105,15 +107,14 @@
             lastUserInput = userInput;
             setLoading( true );
             rawContent = '';
+            rawReasoning = '';
+            reasoningPanel = null;
+            reasoningBody = null;
             outputContent.innerHTML = '';
             outputArea.style.display = 'block';
 
             if ( btnSave ) {
                 btnSave.style.display = 'none';
-            }
-
-            if ( exampleBlock ) {
-                exampleBlock.style.display = 'none';
             }
 
             var formData = new FormData();
@@ -142,7 +143,13 @@
 
                     return response.json().then( function ( d ) {
                         if ( d.success ) {
-                            rawContent = d.data.content;
+                            rawContent = d.data.content || '';
+                            if ( d.data.reasoning ) {
+                                rawReasoning = d.data.reasoning;
+                                ensureReasoningPanel();
+                                reasoningBody.textContent = rawReasoning;
+                                collapseReasoning( true );
+                            }
                             onGenerateComplete();
                         } else {
                             throw new Error( d.data || dsgConfig.i18n.error );
@@ -159,8 +166,61 @@
 
         function onGenerateComplete() {
             renderMarkdown( outputContent, rawContent );
+            if ( reasoningPanel ) {
+                collapseReasoning( true );
+            }
             if ( btnSave && saveable && rawContent ) {
                 btnSave.style.display = '';
+            }
+        }
+
+        /**
+         * Thinking-mode reasoning (reasoning_content deltas) arrives before
+         * the final answer. Create the collapsible panel lazily on first
+         * reasoning chunk and keep it expanded while streaming.
+         */
+        function ensureReasoningPanel() {
+            if ( reasoningPanel ) return;
+
+            reasoningPanel = document.createElement( 'div' );
+            reasoningPanel.className = 'dsg-reasoning';
+
+            var toggle = document.createElement( 'button' );
+            toggle.type = 'button';
+            toggle.className = 'dsg-reasoning-toggle';
+            toggle.setAttribute( 'aria-expanded', 'true' );
+
+            var label = document.createElement( 'span' );
+            label.className = 'dsg-reasoning-label';
+            label.textContent = dsgConfig.i18n.reasoning;
+
+            var arrow = document.createElement( 'span' );
+            arrow.className = 'dsg-reasoning-arrow';
+            arrow.textContent = '▾';
+
+            toggle.appendChild( label );
+            toggle.appendChild( arrow );
+
+            reasoningBody = document.createElement( 'div' );
+            reasoningBody.className = 'dsg-reasoning-body';
+
+            toggle.addEventListener( 'click', function () {
+                var collapsed = reasoningPanel.classList.toggle( 'dsg-reasoning-collapsed' );
+                toggle.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
+            } );
+
+            reasoningPanel.appendChild( toggle );
+            reasoningPanel.appendChild( reasoningBody );
+
+            outputContent.parentNode.insertBefore( reasoningPanel, outputContent );
+        }
+
+        function collapseReasoning( collapsed ) {
+            if ( ! reasoningPanel ) return;
+            reasoningPanel.classList.toggle( 'dsg-reasoning-collapsed', collapsed );
+            var toggle = reasoningPanel.querySelector( '.dsg-reasoning-toggle' );
+            if ( toggle ) {
+                toggle.setAttribute( 'aria-expanded', collapsed ? 'false' : 'true' );
             }
         }
 
@@ -196,6 +256,12 @@
                             return;
                         }
                         var delta = json.choices && json.choices[ 0 ] && json.choices[ 0 ].delta;
+                        if ( delta && delta.reasoning_content ) {
+                            ensureReasoningPanel();
+                            rawReasoning += delta.reasoning_content;
+                            reasoningBody.textContent = rawReasoning;
+                            outputArea.scrollTop = outputArea.scrollHeight;
+                        }
                         if ( delta && delta.content ) {
                             rawContent += delta.content;
                             outputContent.textContent = rawContent;
